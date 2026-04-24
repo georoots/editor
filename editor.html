@@ -4133,26 +4133,33 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
         }
 
         function getBaseLayers() {
+            // OSM now requires a Referer in web contexts. Other providers run without it.
+            const osmReferrerPolicy = 'strict-origin-when-cross-origin';
+            const providerNoReferrerPolicy = 'no-referrer';
             return {
                 [getText('streetMap')]: L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                     maxZoom: 22,
                     maxNativeZoom: 19,
+                    referrerPolicy: osmReferrerPolicy,
                     attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                 }),
                 [getText('topoMap')]: L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
                     maxZoom: 22,
                     maxNativeZoom: 15,
+                    referrerPolicy: providerNoReferrerPolicy,
                     attribution: '&copy; <a href="https://opentopomap.org">OpenTopoMap</a> contributors'
                 }),
                 [getText('satelliteLatest')]: L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
                     maxZoom: 22,
                     maxNativeZoom: 18,
+                    referrerPolicy: providerNoReferrerPolicy,
                     attribution: '&copy; <a href="https://www.esri.com">Esri</a>'
                 }),
                 [getText('satellite2020')]: L.tileLayer('https://wayback-b.maptiles.arcgis.com/arcgis/rest/services/World_Imagery/WMTS/1.0.0/default028mm/MapServer/tile/29260/{z}/{y}/{x}', {
                     attribution: getText('esri2020Attribution'),
                     maxZoom: 22,
                     maxNativeZoom: 17,
+                    referrerPolicy: providerNoReferrerPolicy,
                     tileSize: 256
                 })
             };
@@ -7487,18 +7494,18 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
         /**
          * Calculate signed area of a ring to determine winding order
          * Positive area = counter-clockwise, Negative area = clockwise
-         * Using shoelace formula
+         * Uses the standard shoelace formula and supports open/closed rings
          */
         function getSignedArea(ring) {
-            if (!ring || ring.length < 3) return 0;
+            if (!Array.isArray(ring) || ring.length < 3) return 0;
             
             let area = 0;
             const n = ring.length;
             
-            for (let i = 0; i < n - 1; i++) {
+            for (let i = 0; i < n; i++) {
                 const [x1, y1] = ring[i];
-                const [x2, y2] = ring[i + 1];
-                area += (x2 - x1) * (y2 + y1);
+                const [x2, y2] = ring[(i + 1) % n];
+                area += (x1 * y2) - (x2 * y1);
             }
             
             return area / 2;
@@ -7519,10 +7526,22 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
             const needsReversal = isHole ? isCounterClockwise : !isCounterClockwise;
             
             if (needsReversal) {
-                // Reverse the ring, but keep the closing coordinate at the end
-                const reversed = coordinates.slice(0, -1).reverse();
-                reversed.push(reversed[0]); // Re-close the ring
-                return reversed;
+                const first = coordinates[0];
+                const last = coordinates[coordinates.length - 1];
+                const isClosed = Array.isArray(first) &&
+                    Array.isArray(last) &&
+                    first.length === last.length &&
+                    first.every((v, idx) => v === last[idx]);
+                
+                // Reverse coordinates while preserving original closure state
+                const core = isClosed ? coordinates.slice(0, -1) : coordinates.slice();
+                core.reverse();
+                
+                if (isClosed && core.length > 0) {
+                    core.push(core[0]);
+                }
+                
+                return core;
             }
             
             return coordinates;
@@ -13064,6 +13083,8 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
                 // Prepare data with validation if requested
                 let dataToExport = JSON.parse(JSON.stringify(currentGeoJSON)); // Deep copy
+                // Enforce RFC 7946 winding order at export time as a final safety check
+                dataToExport = normalizeWindingOrder(dataToExport);
 
                 // Always add feature numbers to all features
                 dataToExport.features.forEach((feature, i) => {
