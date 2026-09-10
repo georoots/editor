@@ -2201,6 +2201,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                         <option value="zh">中文</option>
                         <option value="th">ไทย</option>
                         <option value="am">አማርኛ</option>
+                        <option value="cs">Čeština</option>
                     </select>
                 </div>
                 <h1 data-i18n="title">GeoRoots Editor</h1>
@@ -2586,6 +2587,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
         "dismiss": "Dismiss",
         "closeButton": "×",
         "selectLanguage": "Select language",
+        "selectLanguageLabel": "Select language",
         "cancel": "Cancel",
         "noFeaturesToExport": "No features to export",
         "validatingFeatures": "Checking features...",
@@ -2638,6 +2640,8 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
         "featuresWithIssues": "Features with Issues",
         "issueBreakdown": "Issue Breakdown",
         "invalidGeometries": "Invalid Geometries",
+        "duplicateVertices": "Duplicate Vertices",
+        "duplicateGeometries": "Duplicate Geometries",
         "selfIntersections": "Self-Intersections",
         "featuresWithHoles": "Features with Holes",
         "slivers": "Slivers",
@@ -2676,19 +2680,20 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
         "duplicateGeometryRemovalCompleted": "Duplicate geometry removal completed",
         "fixedSelfIntersectingFeatures": "Fixed self-intersecting features",
         "noPolygonHolesToRemove": "No polygon holes to remove",
-        "sliverRemovalCompleted": "Sliver removal completed",
+        "sliverRemovalStageCompleted": "Sliver removal completed",
         "noOverlapsToRemove": "No overlaps to remove",
         "decomposingOverlappingFeatures": "Decomposing overlapping features...",
         "finalizingClippedGeometries": "Finalizing clipped geometries...",
         "reassemblingFeatures": "Reassembling features...",
-        "smallPolygonRemovalCompleted": "Small polygon removal completed",
-        "pointsInPolygonsRemovalCompleted": "Points in polygons removal completed",
+        "smallPolygonRemovalStageCompleted": "Small polygon removal completed",
+        "pointsInPolygonsRemovalStageCompleted": "Points in polygons removal completed",
         "collinearPointRemovalCompleted": "Collinear point removal completed",
         "noSelfIntersectionsToFix": "No self-intersections to fix",
         "identifiedIssues": "Identified Issues",
         "checkingSelfIntersectionsProgress": "Checking for self-intersections: feature {0} of {1}...",
         "checkingSelfIntersectionsCompleted": "Self-intersection check completed: {0} features with self-intersections found",
         "renderingValidationResults": "Rendering results, please wait...",
+        "validationFailed": "Error: Check failed. {0}",
         "validationErrorOccurred": "Error: Quality check error occurred. {0}",
         "invalidFeaturesTitle": "Invalid Features Found",
         "invalidFeaturesMessage": "Your file contains {count} invalid geometric features that cannot be loaded. This usually means features with no geometry, no coordinates, or less than 3 points for polygons.",
@@ -2763,6 +2768,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
         "dismiss": "Descartar",
         "closeButton": "×",
         "selectLanguage": "Seleccionar idioma",
+        "selectLanguageLabel": "Seleccionar idioma",
         "cancel": "Cancelar",
         "noFeaturesToExport": "No hay elementos para exportar",
         "validatingFeatures": "Verificando elementos...",
@@ -2810,6 +2816,8 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
         "featuresWithIssues": "Características con Problemas",
         "issueBreakdown": "Desglose de Problemas",
         "invalidGeometries": "Geometrías Inválidas",
+        "duplicateVertices": "Vértices Duplicados",
+        "duplicateGeometries": "Geometrías Duplicadas",
         "selfIntersections": "Autointersecciones",
         "featuresWithHoles": "Características con Agujeros",
         "slivers": "Polígonos Delgados",
@@ -2855,13 +2863,13 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
         "duplicateGeometryRemovalCompleted": "Eliminación de geometrías duplicadas completada",
         "fixedSelfIntersectingFeatures": "Características autointersectadas corregidas",
         "noPolygonHolesToRemove": "No hay agujeros de polígono para eliminar",
-        "sliverRemovalCompleted": "Eliminación de astillas completada",
+        "sliverRemovalStageCompleted": "Eliminación de astillas completada",
         "noOverlapsToRemove": "No hay superposiciones para eliminar",
         "decomposingOverlappingFeatures": "Descomponiendo características superpuestas...",
         "finalizingClippedGeometries": "Finalizando geometrías recortadas...",
         "reassemblingFeatures": "Reensamblando características...",
-        "smallPolygonRemovalCompleted": "Eliminación de polígonos pequeños completada",
-        "pointsInPolygonsRemovalCompleted": "Eliminación de puntos en polígonos completada",
+        "smallPolygonRemovalStageCompleted": "Eliminación de polígonos pequeños completada",
+        "pointsInPolygonsRemovalStageCompleted": "Eliminación de puntos en polígonos completada",
         "collinearPointRemovalCompleted": "Eliminación de puntos colineales completada",
         "noSelfIntersectionsToFix": "No hay autointersecciones para corregir",
         "identifiedIssues": "Problemas Identificados",
@@ -2942,6 +2950,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
         "dismiss": "Ignorer",
         "closeButton": "×",
         "selectLanguage": "Sélectionner la langue",
+        "selectLanguageLabel": "Sélectionner la langue",
         "cancel": "Annuler",
         "noFeaturesToExport": "Aucun élément à exporter",
         "validatingFeatures": "Vérification des éléments...",
@@ -2989,6 +2998,8 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
         "featuresWithIssues": "Caractéristiques avec Problèmes",
         "issueBreakdown": "Répartition des Problèmes",
         "invalidGeometries": "Géométries Invalides",
+        "duplicateVertices": "Sommets dupliqués",
+        "duplicateGeometries": "Géométries dupliquées",
         "selfIntersections": "Auto-intersections",
         "featuresWithHoles": "Caractéristiques avec Trous",
         "slivers": "Fragments",
@@ -3034,13 +3045,13 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
         "duplicateGeometryRemovalCompleted": "Suppression des géométries en double terminée",
         "fixedSelfIntersectingFeatures": "Fonctionnalités auto-intersectantes corrigées",
         "noPolygonHolesToRemove": "Aucun trou de polygone à supprimer",
-        "sliverRemovalCompleted": "Suppression des éclats terminée",
+        "sliverRemovalStageCompleted": "Suppression des éclats terminée",
         "noOverlapsToRemove": "Aucun chevauchement à supprimer",
         "decomposingOverlappingFeatures": "Décomposition des fonctionnalités chevauchantes...",
         "finalizingClippedGeometries": "Finalisation des géométries découpées...",
         "reassemblingFeatures": "Réassemblage des fonctionnalités...",
-        "smallPolygonRemovalCompleted": "Suppression des petits polygones terminée",
-        "pointsInPolygonsRemovalCompleted": "Suppression des points dans les polygones terminée",
+        "smallPolygonRemovalStageCompleted": "Suppression des petits polygones terminée",
+        "pointsInPolygonsRemovalStageCompleted": "Suppression des points dans les polygones terminée",
         "collinearPointRemovalCompleted": "Suppression des points colinéaires terminée",
         "noSelfIntersectionsToFix": "Aucune auto-intersection à corriger",
         "identifiedIssues": "Problèmes Identifiés",
@@ -3058,6 +3069,186 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
         "noUndoAvailable": "Rien à annuler",
         "noRedoAvailable": "Rien à rétablir"
     }
+    </script>
+    <script type="application/json" id="lang-cs">
+    {
+            "title": "GeoRoots Editor",
+            "pageTitle": "GeoRoots Editor - vizuální editor GeoJSON",
+            "collaborationText": "vyvinuto ve spolupráci s",
+            "downloadText": "Stáhněte nejnovější verzi a další nástroje na",
+            "subtitle": "Toto je vizuální editor GeoJSON pro vytváření a úpravu geografických dat.",
+            "uploadText": "Přetáhněte sem svůj soubor GeoJSON",
+            "orText": "nebo",
+            "selectGeoJSONButton": "Vybrat soubor GeoJSON",
+            "privacyText": "Váš soubor a jeho obsah jsou zpracovávány pouze lokálně ve vašem prohlížeči a žádné informace nejsou odesílány GeoRoots, poskytovatelům map ani nikomu jinému.",
+            "licenseText": "Tento software je zdarma, vydaný pod open source licencí GPLv3, úplné prohlášení naleznete ve zdrojovém kódu.",
+            "processingText": "Zpracování dat GeoJSON...",
+            "hideControls": "Skrýt ovládání",
+            "showControls": "Zobrazit ovládání",
+            "editingControlsTitle": "Nástroje pro úpravu",
+            "editingMode": "Režim:",
+            "panMode": "Zobrazení",
+            "editMode": "Úpravy",
+            "validateMode": "Kontrola",
+            "editingTools": "Nástroje:",
+            "selectTool": "Vybrat a upravit",
+            "vertexTool": "Přidat/odebrat vrchol",
+            "editPropertiesBtn": "Upravit vlastnosti",
+            "featureActions": "Akce s objekty:",
+            "removeFeature": "Odstranit objekt",
+            "addPoint": "Přidat bod",
+            "addPolygon": "Přidat polygon",
+            "export": "Exportovat",
+            "exportGeoJSON": "Exportovat GeoJSON",
+            "exportCSV": "Exportovat CSV",
+            "exportTitle": "Export",
+            "selectFileName": "Vyberte název souboru:",
+            "validateAndExport": "Zkontrolovat vše a exportovat objekty s reportem kvality",
+            "snapSettings": "Nastavení přichytávání:",
+            "enableSnap": "Zapnout přichytávání",
+            "snapRadius": "Poloměr přichytávání (pixely):",
+            "legendTitle": "Legenda",
+            "plotBoundary": "Hranice parcely",
+            "editProperties": "Upravit vlastnosti",
+            "addProperty": "Přidat vlastnost",
+            "saveProperties": "Uložit",
+            "noProperties": "Nebyly nalezeny žádné vlastnosti",
+            "propertiesTitle": "Vlastnosti",
+            "invalidGeoJSON": "Chyba při zpracování souboru. Ujistěte se, že je to platný soubor GeoJSON.",
+            "streetMap": "Uliční mapa",
+            "topoMap": "Topografická mapa",
+            "satelliteLatest": "Nejnovější satelitní snímek",
+            "satellite2020": "Satelitní snímek z roku 2020",
+            "forestCoverage": "Lesní pokryv (GFC 2020v2)",
+            "treeCoverLossAttribution": "Úbytek porostu © Global Forest Watch",
+            "esri2020Attribution": "Mapy © Esri 2020 — Zdroj: Esri, Maxar, Earthstar Geographics",
+            "gfcAttribution": "Evropská komise JRC - Global Forest Change 2020v2",
+            "preparing": "Příprava…",
+            "outerRing": "Vnější okruh",
+            "hole": "Díra {i}",
+            "keyPlaceholder": "Klíč",
+            "valuePlaceholder": "Hodnota",
+            "dismiss": "Zavřít",
+            "closeButton": "×",
+            "selectLanguage": "Vyberte jazyk",
+            "selectLanguageLabel": "Vyberte jazyk",
+            "cancel": "Zrušit",
+            "noFeaturesToExport": "Žádné objekty k exportu",
+            "validatingFeatures": "Kontrola objektů...",
+            "exportCompleted": "Export byl úspěšně dokončen",
+            "exportFailed": "Export se nezdařil",
+            "turfLibraryNotLoaded": "Chyba: Knihovna Turf.js není načtena. Nelze pokračovat v odstraňování překrývajících se polygonů.",
+            "polygonClippingFailed": "Upozornění: Ořez polygonu se nezdařil pro jeden objekt. Ponechána původní část. Chyba: {0}",
+            "turfLoadFailed": "Chyba: Knihovnu Turf.js se nepodařilo načíst. Kontroly kvality nelze provést. Data se načítají bez kontrol...",
+            "turfSelfIntersectionDetectionFailed": "Pro detekci překřížených polygonů je vyžadována knihovna Turf.js, ale není načtena.",
+            "turfOverlapDetectionFailed": "Pro detekci překrývajících se polygonů je vyžadována knihovna Turf.js, ale není načtena.",
+            "autoCleaner": "Automatické čištění",
+            "validation": "Kontrola dat",
+            "clean": "Vyčistit",
+            "remove": "Odstranit",
+            "validateGeometries": "Zkontrolovat geometrie",
+            "autoClean": "Automatické čištění",
+            "deduplicatingProgress": "Kontrola duplicit: objekt {0} z {1}...",
+            "deduplicatingCompleted": "Kontrola duplicit dokončena: nalezeno {0} duplicit",
+            "holesProgress": "Kontrola děr v polygonech: objekt {0} z {1}...",
+            "holesCompleted": "Kontrola děr dokončena: nalezeno {0} objektů s dírami",
+            "deletePolygonTitle": "Smazat polygon?",
+            "deletePolygonConfirm": "Tento polygon by měl méně než 3 vrcholy. Chcete tento polygon smazat?",
+            "autoCleanWarning": "Pokud potřebujete vrátit změny automatického čištění, použijte Ctrl/Cmd+Z (zpět) nebo Ctrl/Cmd+Y (vpřed). Ctrl/Cmd+Q přepíná mezi poslední změnou.",
+            "closeUnclosedRings": "Uzavřít neuzavřené prstence",
+            "mandatory": "(povinné)",
+            "removeDuplicateGeometries": "Odstranit duplicitní geometrie",
+            "fixPolygonSelfIntersection": "Opravit překřížené polygony",
+            "removePolygonHoles": "Odstranit díry v polygonech",
+            "removeSlivers": "Odstranit štíhlé polygony a ostré úhly (<4°)",
+            "removePolygonsBelow": "Odstranit polygony menší než",
+            "squareMeters": "metrů čtverečních",
+            "removePolygonOverlap": "Odstranit překrývající se polygony",
+            "removePointsInPolygons": "Odstranit body uvnitř polygonů",
+            "removeRedundantCollinear": "Odstranit nadbytečné kolineární body",
+            "selectToolHint": "Vyberte objekt pro úpravu. Přetažením oranžového bodu ho přesunete.",
+            "vertexToolHint": "Kliknutím na zelené středové body přidáte vrcholy. Kliknutím na oranžové vrcholy je odstraníte. Přetažením oranžových vrcholů je přesunete.",
+            "propertiesToolHint": "Kliknutím na libovolný objekt upravíte jeho vlastnosti.",
+            "removeModeHint": "Režim odstranění: kliknutím na libovolný objekt ho smažete. Kliknutím znovu režim zrušíte.",
+            "addPointHint": "Přidat bod: kliknutím na mapu umístíte nový bod.",
+            "addPolygonHint": "Přidat polygon: kliknutím přidáte vrcholy; pravým kliknutím dokončíte.",
+            "validationReport": "Report kvality dat",
+            "close": "Zavřít",
+            "unsupportedGeometryWarning": "Zjištěny nepodporované typy geometrie",
+            "unsupportedGeometryMessage": "Ve vašem datasetu jsou LineStringy a/nebo MultiLineStringy. Tyto typy geometrie nejsou podporovány EUDR. Spuštění automatického čištění se pokusí převést je na polygony nebo je odstraní, pokud převod není možný.",
+            "validationSuccess": "Všechny kontroly proběhly úspěšně",
+            "noValidationIssues": "Váš dataset prošel všemi kontrolami kvality. Nebyly nalezeny žádné problémy.",
+            "overallStatistics": "Celkové statistiky",
+            "totalFeatures": "Celkem objektů",
+            "validFeatures": "Platné objekty",
+            "featuresWithIssues": "Objekty s problémy",
+            "issueBreakdown": "Rozpis problémů",
+            "invalidGeometries": "Neplatné geometrie",
+            "duplicateVertices": "Duplicitní vrcholy",
+            "duplicateGeometries": "Duplicitní geometrie",
+            "selfIntersections": "Překřížené polygony",
+            "featuresWithHoles": "Objekty s dírami",
+            "slivers": "Štíhlé polygony",
+            "overlappingPairs": "Překrývající se polygony",
+            "completed": "Dokončeno",
+            "errorProcessingGeoJSON": "Chyba při zpracování GeoJSON: {0}",
+            "noOverlapsDetected": "Nebyly zjištěny žádné překrývající se polygony. Polygony jsou již čisté.",
+            "polygonsDividedWarning": "Upozornění: Některé polygony byly při odstraňování překrývajících se polygonů rozděleny na více částí.",
+            "overlapRemovalCompleted": "Odstranění překrývajících se polygonů bylo úspěšně dokončeno.",
+            "sliverRemovalCompleted": "Odstranění štíhlých polygonů dokončeno: odstraněno {0} polygon(ů) a {1} vrchol(ů).",
+            "noSliversDetected": "Odstranění štíhlých polygonů dokončeno: nebyly zjištěny žádné štíhlé polygony.",
+            "smallPolygonRemovalCompleted": "Odstranění malých polygonů dokončeno: odstraněno {0} polygon(ů) menších než {1} metrů čtverečních.",
+            "noSmallPolygonsFound": "Odstranění malých polygonů dokončeno: nebyly nalezeny polygony menší než {1} metrů čtverečních.",
+            "noPolygonsOrPointsFound": "Odstranění bodů v polygonech: nebyly nalezeny polygony ani body ke zpracování.",
+            "pointsInPolygonsRemovalCompleted": "Odstranění bodů v polygonech dokončeno: odstraněno {0} bod(ů) uvnitř polygonů.",
+            "noPointsInPolygonsFound": "Odstranění bodů v polygonech dokončeno: nebyly nalezeny body uvnitř polygonů.",
+            "collinearRemovalFailed": "Upozornění: Odstranění kolineárních bodů se nezdařilo pro objekt {0}. Chyba: {1}",
+            "selfIntersectionFixFailed": "Upozornění: Oprava překřížených polygonů se nezdařila pro objekt {0}. Chyba: {1}",
+            "autoCleanRenderUpdateFailed": "Upozornění: Aktualizace vykreslení po automatickém čištění se nezdařila. Chyba: {0}",
+            "autoCleanErrorOccurred": "Chyba: Došlo k chybě automatického čištění. Chyba: {0}",
+            "autoCleanRevertFailed": "Chyba: Vrácení automatického čištění se nezdařilo. Chyba: {0}",
+            "startEmptyProject": "Začít prázdný projekt",
+            "startOver": "Začít znovu",
+            "multipolygonSelection": "Výběr MultiPolygonu:",
+            "polygonLabel": "Polygon:",
+            "sliverRemovalFailed": "Upozornění: Odstranění štíhlých polygonů se nezdařilo pro objekt {0}. Chyba: {1}",
+            "validationFailed": "Chyba: Kontrola se nezdařila. {0}",
+            "allChecksDone": "Všechny kontroly dokončeny, nebyly nalezeny žádné problémy s kvalitou.",
+            "validationSummary": "Kontrola kvality dokončena: {0} platných, {1} neplatných z celkem {2} objektů.",
+            "validationSummaryWithDuplicates": "Kontrola kvality dokončena: {0} platných, {1} neplatných, {2} duplicit z celkem {3} objektů.",
+            "validationSummaryWithDuplicatesAndOverlaps": "Kontrola kvality dokončena: {0} platných, {1} neplatných, {2} duplicit, {3} překrývajících se polygonů z celkem {4} objektů.",
+            "checkingOverlapsProgress": "Kontrola překrývajících se polygonů: polygon {0} z {1}...",
+            "checkingOverlapsCompleted": "Kontrola překrývajících se polygonů dokončena: nalezeno {0} překrývajících se polygonů",
+            "processingOverlaps": "Zpracování překrývajících se polygonů: {0} z ~{1}",
+            "creatingOverlapRemovalPlan": "Vytváření plánu odstranění překrývajících se polygonů, čekejte prosím...",
+            "noDuplicatePointsToRemove": "Žádné duplicitní body k odstranění",
+            "duplicateGeometryRemovalCompleted": "Odstranění duplicitních geometrií dokončeno",
+            "fixedSelfIntersectingFeatures": "Opraveny překřížené polygony",
+            "noPolygonHolesToRemove": "Žádné díry v polygonech k odstranění",
+            "sliverRemovalStageCompleted": "Odstranění štíhlých polygonů dokončeno",
+            "smallPolygonRemovalStageCompleted": "Odstranění malých polygonů dokončeno",
+            "pointsInPolygonsRemovalStageCompleted": "Odstranění bodů v polygonech dokončeno",
+            "noOverlapsToRemove": "Žádné překrývající se polygony k odstranění",
+            "decomposingOverlappingFeatures": "Rozkládání překrývajících se polygonů...",
+            "finalizingClippedGeometries": "Dokončování oříznutých geometrií...",
+            "reassemblingFeatures": "Znovuskládání objektů...",
+            "collinearPointRemovalCompleted": "Odstranění kolineárních bodů dokončeno",
+            "noSelfIntersectionsToFix": "Žádné překřížené polygony k opravě",
+            "identifiedIssues": "Zjištěné problémy",
+            "checkingSelfIntersectionsProgress": "Kontrola překřížených polygonů: objekt {0} z {1}...",
+            "checkingSelfIntersectionsCompleted": "Kontrola překřížených polygonů dokončena: nalezeno {0} překřížených polygonů",
+            "renderingValidationResults": "Vykreslování výsledků, čekejte prosím...",
+            "validationErrorOccurred": "Chyba: Došlo k chybě kontroly kvality. {0}",
+            "invalidFeaturesTitle": "Nalezeny neplatné objekty",
+            "invalidFeaturesMessage": "Váš soubor obsahuje {count} neplatných geometrických objektů, které nelze načíst. Obvykle to znamená objekty bez geometrie, bez souřadnic nebo s méně než 3 body pro polygony.",
+            "downloadInvalidButton": "Stáhnout neplatné objekty",
+            "continueWithValidButton": "Pokračovat s platnými objekty",
+            "coordinatesCopied": "Souřadnice zkopírovány: {0}",
+            "coordinatesCopyFailed": "Kopírování souřadnic se nezdařilo",
+            "featureNoLongerExists": "Objekt již neexistuje. Od kontroly mohl být odstraněn nebo sloučen.",
+            "noUndoAvailable": "Nic k vrácení",
+            "noRedoAvailable": "Nic k opakování"
+        }
     </script>
 
     <script type="application/json" id="lang-pt">
@@ -3121,6 +3312,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
         "dismiss": "Dispensar",
         "closeButton": "×",
         "selectLanguage": "Selecionar idioma",
+        "selectLanguageLabel": "Selecionar idioma",
         "cancel": "Cancelar",
         "noFeaturesToExport": "Nenhum elemento para exportar",
         "validatingFeatures": "Verificando elementos...",
@@ -3168,6 +3360,8 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
         "featuresWithIssues": "Características com Problemas",
         "issueBreakdown": "Detalhamento de Problemas",
         "invalidGeometries": "Geometrias Inválidas",
+        "duplicateVertices": "Vértices Duplicados",
+        "duplicateGeometries": "Geometrias Duplicadas",
         "selfIntersections": "Autointersecções",
         "featuresWithHoles": "Características com Buracos",
         "slivers": "Fragmentos",
@@ -3213,13 +3407,13 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
         "duplicateGeometryRemovalCompleted": "Remoção de geometrias duplicadas concluída",
         "fixedSelfIntersectingFeatures": "Recursos autointersectados corrigidos",
         "noPolygonHolesToRemove": "Não há buracos de polígono para remover",
-        "sliverRemovalCompleted": "Remoção de lascas concluída",
+        "sliverRemovalStageCompleted": "Remoção de lascas concluída",
         "noOverlapsToRemove": "Não há sobreposições para remover",
         "decomposingOverlappingFeatures": "Decompondo recursos sobrepostos...",
         "finalizingClippedGeometries": "Finalizando geometrias cortadas...",
         "reassemblingFeatures": "Remontando recursos...",
-        "smallPolygonRemovalCompleted": "Remoção de polígonos pequenos concluída",
-        "pointsInPolygonsRemovalCompleted": "Remoção de pontos em polígonos concluída",
+        "smallPolygonRemovalStageCompleted": "Remoção de polígonos pequenos concluída",
+        "pointsInPolygonsRemovalStageCompleted": "Remoção de pontos em polígonos concluída",
         "collinearPointRemovalCompleted": "Remoção de pontos colineares concluída",
         "noSelfIntersectionsToFix": "Não há autointersecções para corrigir",
         "identifiedIssues": "Problemas Identificados",
@@ -3300,6 +3494,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
         "dismiss": "Kataa",
         "closeButton": "×",
         "selectLanguage": "Chagua lugha",
+        "selectLanguageLabel": "Chagua lugha",
         "cancel": "Ghairi",
         "noFeaturesToExport": "Hakuna vipengele vya kuhamisha",
         "validatingFeatures": "Kuangalia vipengele...",
@@ -3347,6 +3542,8 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
         "featuresWithIssues": "Vipengele Vyenye Matatizo",
         "issueBreakdown": "Mgawanyiko wa Matatizo",
         "invalidGeometries": "Jiometri Batili",
+        "duplicateVertices": "Vipeo Vinavyorudiwa",
+        "duplicateGeometries": "Jiometri Zinazorudiwa",
         "selfIntersections": "Makutano ya Kujipigana",
         "featuresWithHoles": "Vipengele Vyenye Mashimo",
         "slivers": "Vipande Vidogo",
@@ -3392,13 +3589,13 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
         "duplicateGeometryRemovalCompleted": "Kuondoa jiometri za nakala kumekamilika",
         "fixedSelfIntersectingFeatures": "Vipengele vya kukatika kibinafsi vimerekebisha",
         "noPolygonHolesToRemove": "Hakuna mashimo ya poligoni ya kuondoa",
-        "sliverRemovalCompleted": "Kuondoa vipande vidogo kumekamilika",
+        "sliverRemovalStageCompleted": "Kuondoa vipande vidogo kumekamilika",
         "noOverlapsToRemove": "Hakuna mipakani ya kuondoa",
         "decomposingOverlappingFeatures": "Kuvunja vipengele vinavyopakana...",
         "finalizingClippedGeometries": "Kukamilisha jiometri zilizokatakata...",
         "reassemblingFeatures": "Kuunganisha vipengele tena...",
-        "smallPolygonRemovalCompleted": "Kuondoa poligoni ndogo kumekamilika",
-        "pointsInPolygonsRemovalCompleted": "Kuondoa pointi ndani ya poligoni kumekamilika",
+        "smallPolygonRemovalStageCompleted": "Kuondoa poligoni ndogo kumekamilika",
+        "pointsInPolygonsRemovalStageCompleted": "Kuondoa pointi ndani ya poligoni kumekamilika",
         "collinearPointRemovalCompleted": "Kuondoa pointi za mstari mmoja kumekamilika",
         "noSelfIntersectionsToFix": "Hakuna mikatiko ya kibinafsi ya kurekebisha",
         "identifiedIssues": "Matatizo Yaliyotambuliwa",
@@ -3479,6 +3676,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
         "dismiss": "忽略",
         "closeButton": "×",
         "selectLanguage": "选择语言",
+        "selectLanguageLabel": "选择语言",
         "cancel": "取消",
         "noFeaturesToExport": "没有要导出的要素",
         "validatingFeatures": "正在检查要素...",
@@ -3526,6 +3724,8 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
         "featuresWithIssues": "有问题的特征",
         "issueBreakdown": "问题细分",
         "invalidGeometries": "无效几何",
+        "duplicateVertices": "重复顶点",
+        "duplicateGeometries": "重复几何",
         "selfIntersections": "自相交",
         "featuresWithHoles": "带孔特征",
         "slivers": "细长多边形",
@@ -3571,13 +3771,13 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
         "duplicateGeometryRemovalCompleted": "重复几何移除完成",
         "fixedSelfIntersectingFeatures": "已修复自相交要素",
         "noPolygonHolesToRemove": "没有多边形孔需要移除",
-        "sliverRemovalCompleted": "细长碎片移除完成",
+        "sliverRemovalStageCompleted": "细长碎片移除完成",
         "noOverlapsToRemove": "没有重叠需要移除",
         "decomposingOverlappingFeatures": "正在分解重叠要素...",
         "finalizingClippedGeometries": "正在完成裁剪几何...",
         "reassemblingFeatures": "正在重组要素...",
-        "smallPolygonRemovalCompleted": "小多边形移除完成",
-        "pointsInPolygonsRemovalCompleted": "多边形内点移除完成",
+        "smallPolygonRemovalStageCompleted": "小多边形移除完成",
+        "pointsInPolygonsRemovalStageCompleted": "多边形内点移除完成",
         "collinearPointRemovalCompleted": "共线点移除完成",
         "noSelfIntersectionsToFix": "没有自相交需要修复",
         "identifiedIssues": "已识别的问题",
@@ -3658,6 +3858,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
         "dismiss": "ปิด",
         "closeButton": "×",
         "selectLanguage": "เลือกภาษา",
+        "selectLanguageLabel": "เลือกภาษา",
         "cancel": "ยกเลิก",
         "noFeaturesToExport": "ไม่มีฟีเจอร์ที่จะส่งออก",
         "validatingFeatures": "กำลังตรวจสอบฟีเจอร์...",
@@ -3705,6 +3906,8 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
         "featuresWithIssues": "คุณลักษณะที่มีปัญหา",
         "issueBreakdown": "รายละเอียดปัญหา",
         "invalidGeometries": "เรขาคณิตไม่ถูกต้อง",
+        "duplicateVertices": "จุดยอดที่ซ้ำกัน",
+        "duplicateGeometries": "เรขาคณิตที่ซ้ำกัน",
         "selfIntersections": "ตัดกันเอง",
         "featuresWithHoles": "คุณลักษณะที่มีช่องว่าง",
         "slivers": "รูปหลายเหลี่ยมแคบ",
@@ -3750,13 +3953,13 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
         "duplicateGeometryRemovalCompleted": "การลบเรขาคณิตซ้ำเสร็จสิ้น",
         "fixedSelfIntersectingFeatures": "แก้ไขฟีเจอร์ที่ตัดกันเองแล้ว",
         "noPolygonHolesToRemove": "ไม่มีรูในรูปหลายเหลี่ยมที่ต้องลบ",
-        "sliverRemovalCompleted": "การลบชิ้นส่วนเล็กๆ เสร็จสิ้น",
+        "sliverRemovalStageCompleted": "การลบชิ้นส่วนเล็กๆ เสร็จสิ้น",
         "noOverlapsToRemove": "ไม่มีการทับซ้อนที่ต้องลบ",
         "decomposingOverlappingFeatures": "กำลังแยกฟีเจอร์ที่ทับซ้อน...",
         "finalizingClippedGeometries": "กำลังสรุปเรขาคณิตที่ตัด...",
         "reassemblingFeatures": "กำลังประกอบฟีเจอร์ใหม่...",
-        "smallPolygonRemovalCompleted": "การลบรูปหลายเหลี่ยมขนาดเล็กเสร็จสิ้น",
-        "pointsInPolygonsRemovalCompleted": "การลบจุดในรูปหลายเหลี่ยมเสร็จสิ้น",
+        "smallPolygonRemovalStageCompleted": "การลบรูปหลายเหลี่ยมขนาดเล็กเสร็จสิ้น",
+        "pointsInPolygonsRemovalStageCompleted": "การลบจุดในรูปหลายเหลี่ยมเสร็จสิ้น",
         "collinearPointRemovalCompleted": "การลบจุดร่วมเส้นเสร็จสิ้น",
         "noSelfIntersectionsToFix": "ไม่มีการตัดกันเองที่ต้องแก้ไข",
         "identifiedIssues": "ปัญหาที่ระบุ",
@@ -3837,6 +4040,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
         "dismiss": "አስወግድ",
         "closeButton": "×",
         "selectLanguage": "ቋንቋ ምረጥ",
+        "selectLanguageLabel": "ቋንቋ ምረጥ",
         "cancel": "ሰርዝ",
         "noFeaturesToExport": "ለመውጣት ምንም ባህሪዎች የሉም",
         "validatingFeatures": "ባህሪዎችን በማረጋገጥ ላይ...",
@@ -3884,6 +4088,8 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
         "featuresWithIssues": "ችግር ያላቸው ባህሪዎች",
         "issueBreakdown": "የችግር ዝርዝር",
         "invalidGeometries": "ልክ ያልሆኑ ጂኦሜትሪዎች",
+        "duplicateVertices": "የተባዙ ጫፎች",
+        "duplicateGeometries": "የተባዙ ጂኦሜትሪዎች",
         "selfIntersections": "እራስን መቆራረጽ",
         "featuresWithHoles": "ቀዳዳ ያላቸው ባህሪዎች",
         "slivers": "ቀጭን ፖሊጎኖች",
@@ -3929,13 +4135,13 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
         "duplicateGeometryRemovalCompleted": "ድግሞ ጂኦሜትሪዎች ማስወገድ ተጠናቋል",
         "fixedSelfIntersectingFeatures": "በራስ የሚቆረጡ ባህሪያት ተስተካክለዋል",
         "noPolygonHolesToRemove": "ለማስወገድ የሚገኙ የፖሊጎን ቀዳዳዎች የሉም",
-        "sliverRemovalCompleted": "ትናንሽ ቁራጭ ማስወገድ ተጠናቋል",
+        "sliverRemovalStageCompleted": "ትናንሽ ቁራጭ ማስወገድ ተጠናቋል",
         "noOverlapsToRemove": "ለማስወገድ የሚገኙ መደራረብ የሉም",
         "decomposingOverlappingFeatures": "የሚደራረቡ ባህሪያትን በመበጠበጥ ላይ...",
         "finalizingClippedGeometries": "የተቆረጡ ጂኦሜትሪዎችን በማጠናቀቅ ላይ...",
         "reassemblingFeatures": "ባህሪያትን እንደገና በመስብሰብ ላይ...",
-        "smallPolygonRemovalCompleted": "ትናንሽ ፖሊጎኖች ማስወገድ ተጠናቋል",
-        "pointsInPolygonsRemovalCompleted": "በፖሊጎኖች ውስጥ ያሉ ነጥቦች ማስወገድ ተጠናቋል",
+        "smallPolygonRemovalStageCompleted": "ትናንሽ ፖሊጎኖች ማስወገድ ተጠናቋል",
+        "pointsInPolygonsRemovalStageCompleted": "በፖሊጎኖች ውስጥ ያሉ ነጥቦች ማስወገድ ተጠናቋል",
         "collinearPointRemovalCompleted": "በአንድ መስመር ላይ ያሉ ነጥቦች ማስወገድ ተጠናቋል",
         "noSelfIntersectionsToFix": "ለማስተካከል የሚገኙ በራስ መቁረጥ የሉም",
         "identifiedIssues": "የተለዩ ችግሮች",
@@ -5729,6 +5935,67 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
         }
 
         /**
+         * Create a validation-only polygon copy without consecutive duplicate vertices.
+         * Turf kinks can mistake the shared endpoint around a zero-length segment for
+         * a self-intersection. Original coordinates and features remain untouched.
+         * @param {Object} feature - Polygon feature
+         * @param {number} precision - Decimal precision used by duplicate validation
+         * @returns {Object|null} - Normalized feature, or null if the outer ring collapses
+         */
+        function preparePolygonForKinks(feature, precision = 6) {
+            const rings = feature?.geometry?.coordinates;
+            if (!Array.isArray(rings) || rings.length === 0) return null;
+
+            const multiplier = Math.pow(10, precision);
+            const samePosition = (a, b) => (
+                Array.isArray(a) && Array.isArray(b) &&
+                Number.isFinite(a[0]) && Number.isFinite(a[1]) &&
+                Number.isFinite(b[0]) && Number.isFinite(b[1]) &&
+                Math.round(a[0] * multiplier) === Math.round(b[0] * multiplier) &&
+                Math.round(a[1] * multiplier) === Math.round(b[1] * multiplier)
+            );
+
+            const normalizeRing = (ring) => {
+                if (!Array.isArray(ring) || ring.length < 2) return null;
+
+                const normalized = [ring[0]];
+                for (let i = 1; i < ring.length; i++) {
+                    if (!samePosition(normalized[normalized.length - 1], ring[i])) {
+                        normalized.push(ring[i]);
+                    }
+                }
+
+                if (!samePosition(normalized[0], normalized[normalized.length - 1])) {
+                    normalized.push(normalized[0].slice());
+                }
+
+                const uniquePositions = new Set(
+                    normalized.slice(0, -1).map(coord =>
+                        `${Math.round(coord[0] * multiplier)},${Math.round(coord[1] * multiplier)}`
+                    )
+                );
+                return normalized.length >= 4 && uniquePositions.size >= 3 ? normalized : null;
+            };
+
+            const outerRing = normalizeRing(rings[0]);
+            if (!outerRing) return null;
+
+            const normalizedRings = [outerRing];
+            for (let i = 1; i < rings.length; i++) {
+                const hole = normalizeRing(rings[i]);
+                if (hole) normalizedRings.push(hole);
+            }
+
+            return {
+                ...feature,
+                geometry: {
+                    ...feature.geometry,
+                    coordinates: normalizedRings
+                }
+            };
+        }
+
+        /**
          * Finds features with self-intersections using Turf.js kinks
          * @param {Object|Array} input - GeoJSON FeatureCollection or array of features
          * @param {Function} progressCallback - Optional callback for progress updates
@@ -5778,16 +6045,21 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                 if (geomType === 'Polygon' || geomType === 'LineString' || geomType === 'MultiLineString') {
                     // For Polygon and LineString, check the entire feature
                     try {
-                        const kinksResult = turf.kinks(feature);
-                        
-                        // If kinks returns any points, the feature has self-intersections
-                        if (kinksResult && kinksResult.features && kinksResult.features.length > 0) {
-                            selfIntersectingFeatures.push({
-                                feature: feature,
-                                featureIndex: i,
-                                kinks: kinksResult.features,
-                                kinkCount: kinksResult.features.length
-                            });
+                        const featureForKinks = geomType === 'Polygon'
+                            ? preparePolygonForKinks(feature)
+                            : feature;
+                        if (featureForKinks) {
+                            const kinksResult = turf.kinks(featureForKinks);
+
+                            // If kinks returns any points, the feature has self-intersections
+                            if (kinksResult && kinksResult.features && kinksResult.features.length > 0) {
+                                selfIntersectingFeatures.push({
+                                    feature: feature,
+                                    featureIndex: i,
+                                    kinks: kinksResult.features,
+                                    kinkCount: kinksResult.features.length
+                                });
+                            }
                         }
                     } catch (err) {
                         console.warn(`Failed to check feature ${i} for self-intersections:`, err);
@@ -5810,7 +6082,10 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                                 properties: {}
                             };
                             
-                            const kinksResult = turf.kinks(subPolygon);
+                            const featureForKinks = preparePolygonForKinks(subPolygon);
+                            if (!featureForKinks) continue;
+
+                            const kinksResult = turf.kinks(featureForKinks);
                             if (kinksResult && kinksResult.features && kinksResult.features.length > 0) {
                                 allKinks.push(...kinksResult.features);
                                 subPolygonIndices.push(polyIndex);
@@ -6766,7 +7041,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
             try {
                 await stageRemoveSlivers(options?.autoCleanOptions || {}, progressCallback, sliverResults);
                 const result = currentGeoJSON ? currentGeoJSON.features : features;
-                if (progressCallback) progressCallback(100, getText('sliverRemovalCompleted'));
+                if (progressCallback) progressCallback(100, getText('sliverRemovalStageCompleted'));
                 return result;
             } finally {
                 if (currentGeoJSON && original) currentGeoJSON.features = original;
@@ -7452,7 +7727,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
             try {
                 await stageRemoveSmallPolygons(options?.autoCleanOptions || {}, progressCallback);
                 const result = currentGeoJSON ? currentGeoJSON.features : features;
-                if (progressCallback) progressCallback(100, getText('smallPolygonRemovalCompleted'));
+                if (progressCallback) progressCallback(100, getText('smallPolygonRemovalStageCompleted'));
                 return result;
             } finally {
                 if (currentGeoJSON && original) currentGeoJSON.features = original;
@@ -7466,7 +7741,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
             try {
                 await stageRemovePointsInPolygons(options?.autoCleanOptions || {}, progressCallback);
                 const result = currentGeoJSON ? currentGeoJSON.features : features;
-                if (progressCallback) progressCallback(100, getText('pointsInPolygonsRemovalCompleted'));
+                if (progressCallback) progressCallback(100, getText('pointsInPolygonsRemovalStageCompleted'));
                 return result;
             } finally {
                 if (currentGeoJSON && original) currentGeoJSON.features = original;
@@ -12812,6 +13087,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
             translations.en = JSON.parse(document.getElementById('lang-en').textContent);
             translations.es = JSON.parse(document.getElementById('lang-es').textContent);
             translations.fr = JSON.parse(document.getElementById('lang-fr').textContent);
+            translations.cs = JSON.parse(document.getElementById('lang-cs').textContent);
             translations.pt = JSON.parse(document.getElementById('lang-pt').textContent);
             translations.sw = JSON.parse(document.getElementById('lang-sw').textContent);
             translations.zh = JSON.parse(document.getElementById('lang-zh').textContent);
