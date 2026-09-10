@@ -12248,7 +12248,8 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                 }
             }
 
-            // Identify the currently edited polygon to exclude it from snapping
+            // Identify the currently edited geometry. For a MultiPolygon, only the
+            // active polygon is excluded so sibling polygons remain valid targets.
             const excludeLayer = typeof editingLayer !== 'undefined' ? editingLayer : null;
             const excludeFeature = typeof editingOriginalFeatureRef !== 'undefined' ? editingOriginalFeatureRef : null;
 
@@ -12259,9 +12260,16 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                         if (!child || !child.getLatLngs) return;
                         const featureRef = child.feature || (parent.feature || null);
 
-                        // Skip the polygon currently being edited (no self-snapping)
-                        if ((excludeLayer && (child === excludeLayer || parent === excludeLayer)) ||
-                            (excludeFeature && featureRef === excludeFeature)) {
+                        const isEditedGeometry =
+                            (excludeLayer && (child === excludeLayer || parent === excludeLayer)) ||
+                            (excludeFeature && featureRef === excludeFeature);
+                        const allowSiblingPolygons =
+                            isEditedGeometry &&
+                            editingGeomType === 'MultiPolygon' &&
+                            Number.isInteger(editingPolyIndex);
+
+                        // Regular polygons remain wholly excluded from self-snapping.
+                        if (isEditedGeometry && !allowSiblingPolygons) {
                             return;
                         }
 
@@ -12272,6 +12280,10 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                         if (Array.isArray(rings[0]) && Array.isArray(rings[0][0])) {
                             // rings: polygons[] -> rings[] -> LatLng[]
                             rings.forEach((poly, polyIdx) => {
+                                // Exclude every ring of the active polygon, while
+                                // allowing other polygons in the same MultiPolygon.
+                                if (allowSiblingPolygons && polyIdx === editingPolyIndex) return;
+
                                 poly.forEach((ring, ringIdx) => {
                                     const n = ring.length;
                                     if (n === 0) return;
