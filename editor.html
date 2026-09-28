@@ -16311,8 +16311,25 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
             document.removeEventListener('mousemove', onLassoMouseMove);
             document.removeEventListener('mouseup', onLassoMouseUp);
             if (!lassoDrawState) return;
-            // Barely moved: treat as a plain Ctrl+click and keep single-select behavior
-            if (lassoDrawState.points.length < 2) { cancelLassoDraw(); return; }
+            const downPoint = lassoDrawState.points[0];
+            // Stationary Ctrl+click (no drag) => toggle the clicked part OFF the
+            // selection. Any real drag keeps drawing the lasso even if it began
+            // directly on top of a feature.
+            if (lassoDrawState.points.length < 2) {
+                let removed = 0;
+                try { removed = deselectPartsAtLatLng(downPoint); } catch (_) {}
+                cancelLassoDraw();
+                // A stationary Ctrl+click is always the lasso-toggle gesture: swallow the
+                // synthetic click that follows the release so it never opens the feature
+                // popup nor triggers an accidental empty-map clear.
+                __lassoJustCompleted = true;
+                setTimeout(function() { __lassoJustCompleted = false; }, 300);
+                if (removed > 0) {
+                    renderBulkSelectionHighlights();
+                    updateBulkSelectionBar();
+                }
+                return;
+            }
             finishLassoDraw();
         }
 
@@ -16347,6 +16364,62 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
             document.removeEventListener('mouseup', onLassoMouseUp);
             if (lassoLayer) { try { map.removeLayer(lassoLayer); } catch (_) {} lassoLayer = null; }
             if (map && map.dragging && state && state.wasDraggingEnabled) map.dragging.enable();
+        }
+
+        /** True when a latlng falls on a selected single part (Polygon or Point) */
+        function bulkPointOnPart(latlng, partGeom) {
+            if (!latlng || !partGeom) return false;
+            if (partGeom.type === 'Point') {
+                const c = partGeom.coordinates;
+                if (!c || c.length < 2) return false;
+                const a = map.latLngToContainerPoint(L.latLng(latlng.lat, latlng.lng));
+                const b = map.latLngToContainerPoint(L.latLng(c[1], c[0]));
+                return a.distanceTo(b) <= 13; // ~ marker radius (9) + slack
+            }
+            if (partGeom.type === 'Polygon') {
+                const coords = partGeom.coordinates;
+                if (!coords || !coords[0] || coords[0].length < 3) return false;
+                const x = latlng.lng, y = latlng.lat;
+                if (!bulkPointInRing(x, y, coords[0])) return false; // outside the exterior ring
+                for (let r = 1; r < coords.length; r++) {
+                    if (bulkPointInRing(x, y, coords[r])) return false; // fell inside a hole
+                }
+                return true;
+            }
+            return false;
+        }
+
+        /**
+         * Remove the single best-matching selected part under a latlng: a nearby
+         * point marker wins (points are drawn on top); otherwise the smallest
+         * containing polygon. Returns 1 when a part was removed, else 0.
+         */
+        function deselectPartsAtLatLng(latlng) {
+            if (!multiSelection || multiSelection.size === 0) return 0;
+            const R = 13; // point hit radius in screen px (marker radius 9 + slack)
+            let nearestPointKey = null, nearestPointDist = Infinity;
+            let polyKey = null, polyArea = Infinity;
+            multiSelection.forEach(function(sel, key) {
+                const feature = bulkResolveFeatureById(sel.featureId);
+                const part = bulkGetPartGeometry(feature, sel.kind, sel.partIndex);
+                if (!part) return;
+                if (sel.kind === 'point') {
+                    const c = part.coordinates;
+                    if (!c || c.length < 2) return;
+                    const d = map.latLngToContainerPoint(L.latLng(latlng.lat, latlng.lng))
+                        .distanceTo(map.latLngToContainerPoint(L.latLng(c[1], c[0])));
+                    if (d <= R && d < nearestPointDist) { nearestPointDist = d; nearestPointKey = key; }
+                } else if (sel.kind === 'poly') {
+                    if (bulkPointOnPart(latlng, part)) {
+                        const a = bulkBBoxOfRing(part.coordinates[0]);
+                        const area = a ? (a[2] - a[0]) * (a[3] - a[1]) : Infinity;
+                        if (area < polyArea) { polyArea = area; polyKey = key; }
+                    }
+                }
+            });
+            const removeKey = nearestPointKey || polyKey;
+            if (removeKey) { multiSelection.delete(removeKey); return 1; }
+            return 0;
         }
 
         /**
