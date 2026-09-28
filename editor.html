@@ -2086,6 +2086,97 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
             opacity: 0.8;
         }
 
+        /* ============================================================ */
+        /* MULTI-FEATURE SELECTION (LASSO) & BULK OPERATIONS              */
+        /* ============================================================ */
+
+        /* Floating action bar shown while a multi-feature selection is active */
+        .bulk-selection-bar {
+            position: fixed;
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1500; /* above map and controls, below modals (10002) */
+            display: none;
+            align-items: center;
+            gap: 14px;
+            background: var(--white);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            box-shadow: 0 8px 28px var(--shadow-color);
+            padding: 10px 16px;
+            font-size: 14px;
+            max-width: 92vw;
+        }
+
+        .bulk-selection-bar.show {
+            display: flex;
+        }
+
+        .bulk-selection-summary {
+            font-weight: 700;
+            color: var(--primary-color);
+            white-space: nowrap;
+        }
+
+        .bulk-selection-actions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .bulk-selection-actions button {
+            background: var(--secondary-color);
+            color: var(--white);
+            border: none;
+            padding: 8px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: background 0.15s ease;
+        }
+
+        .bulk-selection-actions button:hover {
+            background: var(--success-hover);
+        }
+
+        .bulk-selection-actions .bulk-delete-btn {
+            background: var(--danger-color);
+        }
+
+        .bulk-selection-actions .bulk-delete-btn:hover {
+            background: var(--danger-hover);
+        }
+
+        .bulk-selection-actions .bulk-clear-btn {
+            background: var(--gray-medium);
+        }
+
+        .bulk-selection-actions .bulk-clear-btn:hover {
+            background: var(--gray-dark);
+        }
+
+        /* Crosshair cursor over the map while Ctrl/Cmd is held (lasso ready) */
+        .lasso-ready,
+        .lasso-ready .leaflet-container {
+            cursor: crosshair !important;
+        }
+
+        /* Bulk properties modal */
+        .bulk-props-section-label {
+            display: block;
+            font-weight: 600;
+            margin: 14px 0 6px;
+            color: var(--dark-color);
+        }
+
+        .bulk-props-remove-all {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
     </style>
 </head>
 <body>
@@ -2323,6 +2414,19 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
     <!-- Coordinate Display -->
     <div id="coordinate-display"></div>
 
+    <!-- Bulk Selection Floating Action Bar (visible only while a multi-selection is active) -->
+    <div id="bulkSelectionBar" class="bulk-selection-bar" role="toolbar" aria-label="Bulk selection actions">
+        <span id="bulkSelectionSummary" class="bulk-selection-summary"></span>
+        <div class="bulk-selection-actions">
+            <button id="btn-bulk-delete" class="bulk-delete-btn" onclick="openBulkDeleteModal()" data-i18n="bulkDelete">Delete</button>
+            <button id="btn-bulk-properties" onclick="openBulkPropertiesModal()" data-i18n="bulkEditProperties">Edit Properties</button>
+            <button id="btn-bulk-check" onclick="bulkCheckSelected()" data-i18n="bulkCheck">Check</button>
+            <button id="btn-bulk-export" onclick="openBulkExportModal()" data-i18n="bulkExport">Export</button>
+            <button id="btn-bulk-autoclean" onclick="openBulkAutoCleanModal()" data-i18n="bulkAutoClean">Auto-Clean</button>
+            <button id="btn-bulk-clear" class="bulk-clear-btn" onclick="clearBulkSelection()" data-i18n="bulkClear">Clear</button>
+        </div>
+    </div>
+
     <!-- Validation Report Modal -->
     <div id="validationReportModal" class="properties-modal">
         <div class="validation-report-content">
@@ -2433,6 +2537,50 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
         </div>
     </div>
 
+    <!-- Bulk Delete Confirmation Modal -->
+    <div id="bulkDeleteModal" class="properties-modal">
+        <div class="properties-content">
+            <div class="properties-header">
+                <h3 data-i18n="bulkDeleteTitle">Delete Selected Features?</h3>
+                <button class="properties-close" onclick="closeBulkDeleteModal()">&times;</button>
+            </div>
+            <div class="info-content">
+                <p id="bulkDeleteMessage" data-i18n="bulkDeleteConfirm">This will delete the selected items from your data. You can undo this with Ctrl/Cmd+Z.</p>
+            </div>
+            <div class="modal-button-container">
+                <button class="add-property-btn danger-button" onclick="confirmBulkDelete()" data-i18n="bulkDeleteBtn">Delete Selected</button>
+                <button class="save-properties-btn" onclick="closeBulkDeleteModal()" data-i18n="cancel">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bulk Properties Modal -->
+    <div id="bulkPropertiesModal" class="properties-modal">
+        <div class="properties-content">
+            <div class="properties-header">
+                <h3 id="bulkPropertiesTitle" data-i18n="bulkPropertiesTitle">Edit Properties</h3>
+                <button class="properties-close" onclick="closeBulkPropertiesModal()">&times;</button>
+            </div>
+            <div class="info-content">
+                <label class="autoclean-option bulk-props-remove-all">
+                    <input type="checkbox" id="bulk-props-remove-all"> <span data-i18n="bulkPropsRemoveAll">Remove all existing properties</span>
+                </label>
+                <span class="bulk-props-section-label" data-i18n="bulkPropsAddLabel">Add one property to all selected items:</span>
+                <div class="property-row">
+                    <input type="text" id="bulk-props-key" class="property-key" placeholder="Key" autocomplete="off">
+                    <input type="text" id="bulk-props-value" class="property-value" placeholder="Value" autocomplete="off">
+                </div>
+                <div id="bulkPropsInfo" class="validation-warning-box" style="display:none">
+                    <p data-i18n="bulkPropsSplitInfo">Partially selected items are split into separate features so their unselected siblings keep their original properties.</p>
+                </div>
+            </div>
+            <div class="modal-button-container">
+                <button class="save-properties-btn" onclick="applyBulkProperties()" data-i18n="bulkPropertiesApply">Apply</button>
+                <button class="add-property-btn" onclick="closeBulkPropertiesModal()" data-i18n="cancel">Cancel</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Auto-Clean Selection Modal -->
     <div id="autoCleanModal" class="properties-modal">
         <div class="autoclean-content">
@@ -2442,6 +2590,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
             </div>
             <div class="autoclean-body">
                 <div class="autoclean-warning" data-i18n="autoCleanWarning">If you need to undo the Auto-Clean changes, use Ctrl/Cmd+Z (undo) or Ctrl/Cmd+Y (redo). Ctrl/Cmd+Q toggles between the last change.</div>
+                <div class="autoclean-warning" id="ac-bulk-scope" style="display:none;"></div>
                 <div class="autoclean-options">
                     <label class="autoclean-option autoclean-option-mandatory"><input type="checkbox" id="ac-ringclosure" checked disabled> <span data-i18n="closeUnclosedRings">Close Unclosed Rings</span> <span class="mandatory-badge" data-i18n="mandatory">(mandatory)</span></label>
                     <label class="autoclean-option"><input type="checkbox" id="ac-duplicates"> <span data-i18n="removeDuplicateGeometries">Remove Duplicate Geometries</span></label>
@@ -2460,7 +2609,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
             </div>
             <div class="autoclean-footer">
                 <button class="add-property-btn" onclick="closeAutoCleanModal()">Cancel</button>
-                <button class="save-properties-btn" onclick="startAutoClean()">Clean</button>
+                <button class="save-properties-btn" onclick="handleAutoCleanStart()">Clean</button>
             </div>
         </div>
     </div>
@@ -2506,6 +2655,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                 <button class="properties-close" onclick="closeExportModal()">&times;</button>
             </div>
             <div class="export-body">
+                <div class="autoclean-warning" id="export-selection-banner" style="display:none;"></div>
                 <div class="export-field">
                     <label data-i18n="selectFileName">Select file name:</label>
                     <input type="text" id="export-filename" class="export-filename-input" placeholder="my-geodata" autocomplete="off">
@@ -2703,7 +2853,34 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
         "coordinatesCopyFailed": "Failed to copy coordinates",
         "featureNoLongerExists": "Feature no longer exists. It may have been removed or merged since the check.",
         "noUndoAvailable": "Nothing to undo",
-        "noRedoAvailable": "Nothing to redo"
+        "noRedoAvailable": "Nothing to redo",
+        "bulkSelectionSummary": "{0} polygons · {1} points selected",
+        "bulkDelete": "Delete",
+        "bulkEditProperties": "Edit Properties",
+        "bulkCheck": "Check",
+        "bulkExport": "Export",
+        "bulkAutoClean": "Auto-Clean",
+        "bulkClear": "Clear",
+        "bulkDeleteTitle": "Delete Selected Features?",
+        "bulkDeleteConfirm": "This will delete {0} selected items from your data. You can undo this with Ctrl/Cmd+Z.",
+        "bulkDeleteBtn": "Delete Selected",
+        "bulkDeleted": "{0} selected items deleted",
+        "bulkDeleteFailed": "Bulk delete failed",
+        "bulkPropertiesTitle": "Edit Properties - {0} selected",
+        "bulkPropsRemoveAll": "Remove all existing properties",
+        "bulkPropsAddLabel": "Add one property to all selected items:",
+        "bulkPropertiesApply": "Apply",
+        "bulkPropsKeyRequired": "Enter a property key or tick 'Remove all existing properties'",
+        "bulkPropertiesApplied": "Properties updated for {0} features",
+        "bulkPropertiesFailed": "Bulk property update failed",
+        "bulkPropsSplitInfo": "Partially selected items are split into separate features, so their unselected siblings keep their original properties.",
+        "bulkNoSelection": "No features selected. Hold Ctrl/Cmd and drag over the map to select features.",
+        "lassoEmpty": "Nothing was fully inside this selection area",
+        "lassoFailed": "The selection area could not be processed",
+        "lassoHint": "Tip: Hold Ctrl/Cmd and drag on the map to select multiple features, then run bulk actions.",
+        "exportSelectedBanner": "Exporting {0} selected features",
+        "bulkAutoCleanScope": "Auto-Clean will be applied only to the {0} selected items. Overlaps or duplicates with unselected features are not affected.",
+        "bulkAutoCleanDone": "Auto-Clean finished: {0} of {1} selected items removed"
     }
     </script>
 
@@ -2885,7 +3062,34 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
         "coordinatesCopyFailed": "Error al copiar coordenadas",
         "featureNoLongerExists": "El elemento ya no existe. Puede haber sido eliminado o fusionado desde la verificación.",
         "noUndoAvailable": "Nada para deshacer",
-        "noRedoAvailable": "Nada para rehacer"
+        "noRedoAvailable": "Nada para rehacer",
+        "bulkSelectionSummary": "{0} polígonos · {1} puntos seleccionados",
+        "bulkDelete": "Eliminar",
+        "bulkEditProperties": "Editar propiedades",
+        "bulkCheck": "Comprobar",
+        "bulkExport": "Exportar",
+        "bulkAutoClean": "Limpieza automática",
+        "bulkClear": "Vaciar",
+        "bulkDeleteTitle": "¿Eliminar las entidades seleccionadas?",
+        "bulkDeleteConfirm": "Esto eliminará {0} elementos seleccionados de sus datos. Puede deshacerlo con Ctrl/Cmd+Z.",
+        "bulkDeleteBtn": "Eliminar seleccionados",
+        "bulkDeleted": "{0} elementos seleccionados eliminados",
+        "bulkDeleteFailed": "Error al eliminar en lote",
+        "bulkPropertiesTitle": "Editar propiedades - {0} seleccionados",
+        "bulkPropsRemoveAll": "Eliminar todas las propiedades existentes",
+        "bulkPropsAddLabel": "Añadir una propiedad a todos los elementos seleccionados:",
+        "bulkPropertiesApply": "Aplicar",
+        "bulkPropsKeyRequired": "Introduzca una clave de propiedad o marque 'Eliminar todas las propiedades existentes'",
+        "bulkPropertiesApplied": "Propiedades actualizadas en {0} entidades",
+        "bulkPropertiesFailed": "Error al actualizar propiedades en lote",
+        "bulkPropsSplitInfo": "Los elementos parcialmente seleccionados se dividen en entidades independientes, por lo que sus hermanos no seleccionados conservan sus propiedades originales.",
+        "bulkNoSelection": "No hay entidades seleccionadas. Mantenga Ctrl/Cmd y arrastre sobre el mapa para seleccionar entidades.",
+        "lassoEmpty": "Nada quedó completamente dentro de esta área de selección",
+        "lassoFailed": "No se pudo procesar el área de selección",
+        "lassoHint": "Consejo: mantenga Ctrl/Cmd y arrastre sobre el mapa para seleccionar varias entidades y ejecutar acciones masivas.",
+        "exportSelectedBanner": "Exportando {0} entidades seleccionadas",
+        "bulkAutoCleanScope": "La limpieza automática se aplicará solo a los {0} elementos seleccionados. Los solapamientos o duplicados con entidades no seleccionadas no se ven afectados.",
+        "bulkAutoCleanDone": "Limpieza automática completada: se eliminaron {0} de {1} elementos seleccionados"
     }
     </script>
 
@@ -3067,7 +3271,34 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
         "coordinatesCopyFailed": "Échec de la copie des coordonnées",
         "featureNoLongerExists": "La fonctionnalité n'existe plus. Elle a peut-être été supprimée ou fusionnée depuis la vérification.",
         "noUndoAvailable": "Rien à annuler",
-        "noRedoAvailable": "Rien à rétablir"
+        "noRedoAvailable": "Rien à rétablir",
+        "bulkSelectionSummary": "{0} polygones · {1} points sélectionnés",
+        "bulkDelete": "Supprimer",
+        "bulkEditProperties": "Modifier les propriétés",
+        "bulkCheck": "Vérifier",
+        "bulkExport": "Exporter",
+        "bulkAutoClean": "Nettoyage auto",
+        "bulkClear": "Effacer",
+        "bulkDeleteTitle": "Supprimer les entités sélectionnées ?",
+        "bulkDeleteConfirm": "Cette action supprimera {0} éléments sélectionnés de vos données. Vous pouvez l'annuler avec Ctrl/Cmd+Z.",
+        "bulkDeleteBtn": "Supprimer la sélection",
+        "bulkDeleted": "{0} éléments sélectionnés supprimés",
+        "bulkDeleteFailed": "Échec de la suppression par lot",
+        "bulkPropertiesTitle": "Modifier les propriétés - {0} sélectionnés",
+        "bulkPropsRemoveAll": "Supprimer toutes les propriétés existantes",
+        "bulkPropsAddLabel": "Ajouter une propriété à tous les éléments sélectionnés :",
+        "bulkPropertiesApply": "Appliquer",
+        "bulkPropsKeyRequired": "Saisissez une clé de propriété ou cochez 'Supprimer toutes les propriétés existantes'",
+        "bulkPropertiesApplied": "Propriétés mises à jour pour {0} entités",
+        "bulkPropertiesFailed": "Échec de la mise à jour des propriétés par lot",
+        "bulkPropsSplitInfo": "Les éléments partiellement sélectionnés sont divisés en entités distinctes ; leurs éléments non sélectionnés conservent leurs propriétés d'origine.",
+        "bulkNoSelection": "Aucune entité sélectionnée. Maintenez Ctrl/Cmd et faites glisser sur la carte pour sélectionner des entités.",
+        "lassoEmpty": "Rien n'était entièrement contenu dans cette zone de sélection",
+        "lassoFailed": "Impossible de traiter la zone de sélection",
+        "lassoHint": "Astuce : maintenez Ctrl/Cmd et faites glisser sur la carte pour sélectionner plusieurs entités, puis lancez des actions groupées.",
+        "exportSelectedBanner": "Export de {0} entités sélectionnées",
+        "bulkAutoCleanScope": "Le nettoyage automatique s'appliquera uniquement aux {0} éléments sélectionnés. Les chevauchements ou doublons avec des entités non sélectionnées ne sont pas concernés.",
+        "bulkAutoCleanDone": "Nettoyage automatique terminé : {0} éléments sur {1} sélectionnés supprimés"
     }
     </script>
     <script type="application/json" id="lang-cs">
@@ -3247,7 +3478,34 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
             "coordinatesCopyFailed": "Kopírování souřadnic se nezdařilo",
             "featureNoLongerExists": "Objekt již neexistuje. Od kontroly mohl být odstraněn nebo sloučen.",
             "noUndoAvailable": "Nic k vrácení",
-            "noRedoAvailable": "Nic k opakování"
+            "noRedoAvailable": "Nic k opakování",
+            "bulkSelectionSummary": "Vybráno: {0} polygonů · {1} bodů",
+            "bulkDelete": "Smazat",
+            "bulkEditProperties": "Upravit vlastnosti",
+            "bulkCheck": "Zkontrolovat",
+            "bulkExport": "Exportovat",
+            "bulkAutoClean": "Automatické čištění",
+            "bulkClear": "Zrušit výběr",
+            "bulkDeleteTitle": "Smazat vybrané objekty?",
+            "bulkDeleteConfirm": "Tímto se z vašich dat smaže {0} vybraných položek. Lze vrátit pomocí Ctrl/Cmd+Z.",
+            "bulkDeleteBtn": "Smazat výběr",
+            "bulkDeleted": "Smazáno {0} vybraných položek",
+            "bulkDeleteFailed": "Hromadné smazání se nezdařilo",
+            "bulkPropertiesTitle": "Upravit vlastnosti - vybráno {0}",
+            "bulkPropsRemoveAll": "Odebrat všechny existující vlastnosti",
+            "bulkPropsAddLabel": "Přidat jednu vlastnost všem vybraným položkám:",
+            "bulkPropertiesApply": "Použít",
+            "bulkPropsKeyRequired": "Zadejte název vlastnosti nebo zaškrtněte 'Odebrat všechny existující vlastnosti'",
+            "bulkPropertiesApplied": "Vlastnosti aktualizovány u {0} objektů",
+            "bulkPropertiesFailed": "Hromadná aktualizace vlastností se nezdařila",
+            "bulkPropsSplitInfo": "Částečně vybrané položky jsou rozděleny na samostatné objekty, takže jejich nevybrané části si zachovají původní vlastnosti.",
+            "bulkNoSelection": "Nejsou vybrány žádné objekty. Podržte Ctrl/Cmd a tažením po mapě vyberte objekty.",
+            "lassoEmpty": "Uvnitř této výběrové oblasti nic není",
+            "lassoFailed": "Výběrovou oblast se nepodařilo zpracovat",
+            "lassoHint": "Tip: Podržte Ctrl/Cmd a tažením po mapě vyberte více objektů a spusťte hromadné akce.",
+            "exportSelectedBanner": "Exportuje se {0} vybraných objektů",
+            "bulkAutoCleanScope": "Automatické čištění se použije pouze na {0} vybraných položek. Překryvy a duplicity s nevybranými objekty nebudou dotčeny.",
+            "bulkAutoCleanDone": "Automatické čištění dokončeno: odstraněno {0} z {1} vybraných položek"
         }
     </script>
 
@@ -3429,7 +3687,34 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
         "coordinatesCopyFailed": "Falha ao copiar coordenadas",
         "featureNoLongerExists": "O recurso não existe mais. Pode ter sido removido ou mesclado desde a verificação.",
         "noUndoAvailable": "Nada para desfazer",
-        "noRedoAvailable": "Nada para refazer"
+        "noRedoAvailable": "Nada para refazer",
+        "bulkSelectionSummary": "{0} polígonos · {1} pontos selecionados",
+        "bulkDelete": "Eliminar",
+        "bulkEditProperties": "Editar propriedades",
+        "bulkCheck": "Verificar",
+        "bulkExport": "Exportar",
+        "bulkAutoClean": "Limpeza automática",
+        "bulkClear": "Limpar",
+        "bulkDeleteTitle": "Eliminar as entidades selecionadas?",
+        "bulkDeleteConfirm": "Isto eliminará {0} itens selecionados dos seus dados. Pode desfazer com Ctrl/Cmd+Z.",
+        "bulkDeleteBtn": "Eliminar seleção",
+        "bulkDeleted": "{0} itens selecionados eliminados",
+        "bulkDeleteFailed": "Falha na eliminação em lote",
+        "bulkPropertiesTitle": "Editar propriedades - {0} selecionados",
+        "bulkPropsRemoveAll": "Remover todas as propriedades existentes",
+        "bulkPropsAddLabel": "Adicionar uma propriedade a todos os itens selecionados:",
+        "bulkPropertiesApply": "Aplicar",
+        "bulkPropsKeyRequired": "Introduza uma chave de propriedade ou marque 'Remover todas as propriedades existentes'",
+        "bulkPropertiesApplied": "Propriedades atualizadas em {0} entidades",
+        "bulkPropertiesFailed": "Falha na atualização de propriedades em lote",
+        "bulkPropsSplitInfo": "Os itens parcialmente selecionados são divididos em entidades independentes, pelo que os seus elementos não selecionados mantêm as propriedades originais.",
+        "bulkNoSelection": "Nenhuma entidade selecionada. Mantenha Ctrl/Cmd e arraste sobre o mapa para selecionar entidades.",
+        "lassoEmpty": "Nada ficou totalmente dentro desta área de seleção",
+        "lassoFailed": "Não foi possível processar a área de seleção",
+        "lassoHint": "Dica: mantenha Ctrl/Cmd e arraste no mapa para selecionar várias entidades e executar ações em lote.",
+        "exportSelectedBanner": "Exportando {0} entidades selecionadas",
+        "bulkAutoCleanScope": "A limpeza automática será aplicada apenas aos {0} itens selecionados. Sobreposições ou duplicados com entidades não selecionadas não são afetados.",
+        "bulkAutoCleanDone": "Limpeza automática concluída: {0} de {1} itens selecionados removidos"
     }
     </script>
 
@@ -3611,7 +3896,34 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
         "coordinatesCopyFailed": "Kushindwa kunakili kuratibu",
         "featureNoLongerExists": "Kipengele hakipo tena. Huenda kimefutwa au kimeunganishwa tangu uangalizi.",
         "noUndoAvailable": "Hakuna cha kutendua",
-        "noRedoAvailable": "Hakuna cha kurudia"
+        "noRedoAvailable": "Hakuna cha kurudia",
+        "bulkSelectionSummary": "Umechaguliwa: poligoni {0} · nukta {1}",
+        "bulkDelete": "Futa",
+        "bulkEditProperties": "Hariri Sifa",
+        "bulkCheck": "Kagua",
+        "bulkExport": "Hamisha",
+        "bulkAutoClean": "Usafishaji wa Kiotomatiki",
+        "bulkClear": "Futa Uchaguzi",
+        "bulkDeleteTitle": "Futa Vipengele Vilivyochaguliwa?",
+        "bulkDeleteConfirm": "Hii itafuta vitu {0} vilivyochaguliwa kwenye data yako. Unaweza kutendua kwa Ctrl/Cmd+Z.",
+        "bulkDeleteBtn": "Futa Ulichaguliwa",
+        "bulkDeleted": "Vitu {0} vilivyochaguliwa vimefutwa",
+        "bulkDeleteFailed": "Kufuta kwa jumla kimeshindwa",
+        "bulkPropertiesTitle": "Hariri Sifa - {0} wamechaguliwa",
+        "bulkPropsRemoveAll": "Ondoa sifa zote zilizopo",
+        "bulkPropsAddLabel": "Ongeza sifa moja kwa vitu vyote vilivyochaguliwa:",
+        "bulkPropertiesApply": "Tumia",
+        "bulkPropsKeyRequired": "Weka ufunguo wa sifa au washa 'Ondoa sifa zote zilizopo'",
+        "bulkPropertiesApplied": "Sifa zimesasishwa kwa vipengele {0}",
+        "bulkPropertiesFailed": "Kusasisha sifa kwa jumla kimeshindwa",
+        "bulkPropsSplitInfo": "Vitu vilivyochaguliwa kwa kiasi hugawanywa kuwa vipengele huru, hivyo sehemu zisizochaguliwa zinabaki na sifa zao asili.",
+        "bulkNoSelection": "Hakuna vipengele vilivyochaguliwa. Shikilia Ctrl/Cmd na buruta kwenye ramani kuchagua vipengele.",
+        "lassoEmpty": "Hakuna kilichokuwa ndani kabisa ya eneo hili la uchaguzi",
+        "lassoFailed": "Eneo la uchaguzi haliwezi kuchakatwa",
+        "lassoHint": "Kidokezo: Shikilia Ctrl/Cmd na buruta kwenye ramani kuchagua vipengele vingi, kisha endesha matukio ya jumla.",
+        "exportSelectedBanner": "Kuhamisha vipengele {0} vilivyochaguliwa",
+        "bulkAutoCleanScope": "Usafishaji wa kiotomatiki utatumika kwa vitu {0} vilivyochaguliwa pekee. Muingiliano au marudio na vipengele visivyochaguliwa havijasumbuliwa.",
+        "bulkAutoCleanDone": "Usafishaji wa kiotomatiki umekamilika: {0} kati ya vitu {1} vilivyochaguliwa vimeondolewa"
     }
     </script>
 
@@ -3793,7 +4105,34 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
         "coordinatesCopyFailed": "复制坐标失败",
         "featureNoLongerExists": "要素不再存在。它可能在检查后已被删除或合并。",
         "noUndoAvailable": "无可撤销",
-        "noRedoAvailable": "无可重做"
+        "noRedoAvailable": "无可重做",
+        "bulkSelectionSummary": "已选择 {0} 个多边形 · {1} 个点",
+        "bulkDelete": "删除",
+        "bulkEditProperties": "编辑属性",
+        "bulkCheck": "检查",
+        "bulkExport": "导出",
+        "bulkAutoClean": "自动清理",
+        "bulkClear": "清除",
+        "bulkDeleteTitle": "删除所选要素？",
+        "bulkDeleteConfirm": "这将从您的数据中删除 {0} 个所选项目。可使用 Ctrl/Cmd+Z 撤销。",
+        "bulkDeleteBtn": "删除所选",
+        "bulkDeleted": "已删除 {0} 个所选项目",
+        "bulkDeleteFailed": "批量删除失败",
+        "bulkPropertiesTitle": "编辑属性 - 已选择 {0} 项",
+        "bulkPropsRemoveAll": "移除所有现有属性",
+        "bulkPropsAddLabel": "为所有所选项目添加一个属性：",
+        "bulkPropertiesApply": "应用",
+        "bulkPropsKeyRequired": "请输入属性名，或勾选'移除所有现有属性'",
+        "bulkPropertiesApplied": "已为 {0} 个要素更新属性",
+        "bulkPropertiesFailed": "批量更新属性失败",
+        "bulkPropsSplitInfo": "部分选中的项目将拆分为独立要素，因此未选中的同级部分保留其原有属性。",
+        "bulkNoSelection": "未选择任何要素。按住 Ctrl/Cmd 并在地图上拖动即可选择要素。",
+        "lassoEmpty": "该选择区域内没有完全包含的内容",
+        "lassoFailed": "无法处理该选择区域",
+        "lassoHint": "提示：按住 Ctrl/Cmd 并在地图上拖动可选择多个要素，然后执行批量操作。",
+        "exportSelectedBanner": "正在导出 {0} 个所选要素",
+        "bulkAutoCleanScope": "自动清理仅应用于 {0} 个所选项目。与未选要素的重叠或重复不受影响。",
+        "bulkAutoCleanDone": "自动清理完成：{1} 个所选项目中已移除 {0} 个"
     }
     </script>
 
@@ -3975,7 +4314,34 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
         "coordinatesCopyFailed": "การคัดลอกพิกัดล้มเหลว",
         "featureNoLongerExists": "ฟีเจอร์ไม่มีอยู่อีกต่อไป อาจถูกลบหรือรวมตั้งแต่การตรวจสอบคุณภาพ",
         "noUndoAvailable": "ไม่มีอะไรให้ย้อนกลับ",
-        "noRedoAvailable": "ไม่มีอะไรให้ทำซ้ำ"
+        "noRedoAvailable": "ไม่มีอะไรให้ทำซ้ำ",
+        "bulkSelectionSummary": "เลือกแล้ว {0} รูปหลายเหลี่ยม · {1} จุด",
+        "bulkDelete": "ลบ",
+        "bulkEditProperties": "แก้ไขแอตทริบิวต์",
+        "bulkCheck": "ตรวจสอบ",
+        "bulkExport": "ส่งออก",
+        "bulkAutoClean": "ทำความสะอาดอัตโนมัติ",
+        "bulkClear": "ล้างการเลือก",
+        "bulkDeleteTitle": "ลบฟีเจอร์ที่เลือกหรือไม่?",
+        "bulkDeleteConfirm": "การดำเนินการนี้จะลบรายการที่เลือก {0} รายการออกจากข้อมูลของคุณ สามารถย้อนกลับได้ด้วย Ctrl/Cmd+Z",
+        "bulkDeleteBtn": "ลบที่เลือก",
+        "bulkDeleted": "ลบรายการที่เลือก {0} รายการแล้ว",
+        "bulkDeleteFailed": "การลบแบบชุดล้มเหลว",
+        "bulkPropertiesTitle": "แก้ไขแอตทริบิวต์ - เลือก {0} รายการ",
+        "bulkPropsRemoveAll": "ลบแอตทริบิวต์ที่มีอยู่ทั้งหมด",
+        "bulkPropsAddLabel": "เพิ่มแอตทริบิวต์หนึ่งรายการให้แก่ทุกรายการที่เลือก:",
+        "bulkPropertiesApply": "นำไปใช้",
+        "bulkPropsKeyRequired": "กรุณากรอกคีย์แอตทริบิวต์ หรือเลือก 'ลบแอตทริบิวต์ที่มีอยู่ทั้งหมด'",
+        "bulkPropertiesApplied": "อัปเดตแอตทริบิวต์ของ {0} ฟีเจอร์แล้ว",
+        "bulkPropertiesFailed": "การอัปเดตแอตทริบิวต์แบบชุดล้มเหลว",
+        "bulkPropsSplitInfo": "รายการที่เลือกบางส่วนจะถูกแยกเป็นฟีเจอร์อิสระ ดังนั้นส่วนที่ไม่ได้เลือกจะคงแอตทริบิวต์เดิมไว้",
+        "bulkNoSelection": "ยังไม่มีฟีเจอร์ที่เลือก กด Ctrl/Cmd ค้างไว้แล้วลากบนแผนที่เพื่อเลือกฟีเจอร์",
+        "lassoEmpty": "ไม่มีสิ่งใดอยู่ภายในพื้นที่เลือกนี้อย่างสมบูรณ์",
+        "lassoFailed": "ไม่สามารถประมวลผลพื้นที่เลือกได้",
+        "lassoHint": "เคล็ดลับ: กด Ctrl/Cmd ค้างไว้แล้วลากบนแผนที่เพื่อเลือกหลายฟีเจอร์ จากนั้นดำเนินการแบบชุด",
+        "exportSelectedBanner": "กำลังส่งออก {0} ฟีเจอร์ที่เลือก",
+        "bulkAutoCleanScope": "การทำความสะอาดอัตโนมัติจะใช้กับรายการที่เลือก {0} รายการเท่านั้น การซ้อนทับหรือซ้ำกับฟีเจอร์ที่ไม่ได้เลือกจะไม่ได้รับผลกระทบ",
+        "bulkAutoCleanDone": "ทำความสะอาดอัตโนมัติเสร็จสิ้น: ลบ {0} จาก {1} รายการที่เลือกแล้ว"
     }
     </script>
 
@@ -4157,7 +4523,34 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
         "coordinatesCopyFailed": "ቅንጅቶችን ለመገልበጥ አልተሳካም",
         "featureNoLongerExists": "ባህሪ አሁን የለም። ከጥራት ማረጋገጫው በኋላ ተወግዶ ወይም ተዋህዶ ሊሆን ይችላል።",
         "noUndoAvailable": "የማይታገድ ነገር የለም",
-        "noRedoAvailable": "መደገም የሚቻል ነገር የለም"
+        "noRedoAvailable": "መደገም የሚቻል ነገር የለም",
+        "bulkSelectionSummary": "ተመርጠዋል፦ {0} ፖሊጎኖች · {1} ነቁጣዎች",
+        "bulkDelete": "አጥፋ",
+        "bulkEditProperties": "ባህሪያትን አርትዕ",
+        "bulkCheck": "አረጋግጥ",
+        "bulkExport": "ላክ",
+        "bulkAutoClean": "ራስ-ሰር ማጽጃ",
+        "bulkClear": "ምርጫ አጽዳ",
+        "bulkDeleteTitle": "የተመረጡትን አባላት ይሰረዙ?",
+        "bulkDeleteConfirm": "ይህ ከውሂብዎ {0} የተመረጡ ንጥሎችን ያጠፋል። በCtrl/Cmd+Z መልሰው ማከል ይችላሉ።",
+        "bulkDeleteBtn": "የተመረጠውን አጥፋ",
+        "bulkDeleted": "{0} የተመረጡ ንጥሎች ተጠፍተዋል",
+        "bulkDeleteFailed": "በስብስብ ማጥፋት አልተሳካም",
+        "bulkPropertiesTitle": "ባህሪያትን አርትዕ - {0} ተመርጠዋል",
+        "bulkPropsRemoveAll": "ሁሉም ነባሪ ባህሪያትን አስወግድ",
+        "bulkPropsAddLabel": "አንድ ባህሪ ለሁሉም የተመረጡት ንጥሎች ጨምር፦",
+        "bulkPropertiesApply": "ተግብር",
+        "bulkPropsKeyRequired": "የባህሪ ቁልፍ ያስገቡ ወይም 'ሁሉም ነባሪ ባህሪያትን አስወግድ' የሚለውን ይኩሉ",
+        "bulkPropertiesApplied": "ለ{0} አባላት ባህሪያት ተዘምነዋል",
+        "bulkPropertiesFailed": "በስብስብ ባህሪ ማዘመን አልተሳካም",
+        "bulkPropsSplitInfo": "በከፊል የተመረጡ ንጥሎች ለብቻቸው ወደሆኑ አባላት ይከፈላሉ፤ ያልተመረጡት ተዛማጅ ክፍሎች የዋናቸውን ባህሪያት ይገኛሉ።",
+        "bulkNoSelection": "ምንም አባላት አልተመረጡም። Ctrl/Cmd ይያዙና በካርታው ላይ ጎትተው አባላትን ይምረጡ።",
+        "lassoEmpty": "በዚህ የምርጫ አካባቢ ውስጥ ሙሉ በሙሉ የሆነ ነገር የለም",
+        "lassoFailed": "የምርጫ አካባቢውን መቀነስ አልተቻለም",
+        "lassoHint": "ምክር፦ Ctrl/Cmd ይያዙና በካርታው ላይ በመጎተት ብዙ አባላትን ይምረጡ፣ ከዚያ የስብስብ ተግባራትን ያኬዱ።",
+        "exportSelectedBanner": "{0} የተመረጡ አባላት እየተላኩ ነው",
+        "bulkAutoCleanScope": "ራስ-ሰር ማጽጃ የሚተገበረው በተመረጡት {0} ንጥሎች ላይ ብቻ ነው። ያልተመረጡ አባላት ከሚኖራቸው መደራረብ ወይም ድርብነት ጋር አይነካም።",
+        "bulkAutoCleanDone": "ራስ-ሰር ማጽጃ ተጠናቋል፦ ከተመረጡት {1} ንጥሎች {0} ተወግደዋል"
     }
     </script>
 
@@ -4283,6 +4676,18 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
         let validationErrorNavigator = null; // Control for navigating between errors
         let currentValidationErrorIndex = 0; // Current position in error list
         
+        // Multi-feature selection (Ctrl/Cmd lasso) state
+        // The selection unit is a single geometry "part": a whole Polygon, one member
+        // polygon of a MultiPolygon, a whole Point, or one member point of a MultiPoint.
+        // Items are tracked by __persistentId so the selection survives re-renders.
+        let multiSelection = new Map();      // key "f:<id>|<kind>|<partIndex>" -> { featureId, kind, partIndex }
+        let multiSelectOverlayGroup = null;  // persistent highlight layer for selected parts
+        let bulkCheckOverlayGroup = null;    // red violation overlays from "Check selected"
+        let lassoDrawState = null;          // ephemeral state of the in-progress lasso
+        let lassoLayer = null;              // the yellow lasso polygon while drawing
+        let __lassoJustCompleted = false;   // swallows the synthetic click right after a lasso
+        let __bulkExportActive = false;     // export modal is in "selected features" mode
+        let __bulkAutoCleanActive = false;  // auto-clean modal is in "selected features" mode
         
         // Initialize the application
         document.addEventListener('DOMContentLoaded', function() {
@@ -4306,6 +4711,13 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                     } else if ((e.ctrlKey || e.metaKey) && key === 'q') {
                         e.preventDefault();
                         toggleLastStep();
+                    } else if (key === 'escape') {
+                        if (lassoDrawState) {
+                            e.preventDefault();
+                            cancelLassoDraw();
+                        } else if (multiSelection && multiSelection.size > 0) {
+                            clearBulkSelection();
+                        }
                     }
                 } catch(_) {}
             }, true);
@@ -4465,6 +4877,8 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
             
             // Initialize editing controls and legend
             initializeEditingControls();
+            // Ctrl/Cmd lasso multi-selection (available in all modes)
+            setupLassoInteraction();
             updateLegend();
             map.on('zoomend', updateLayersByZoom);
             map.on('baselayerchange', function(e) {
@@ -7936,6 +8350,10 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                 // Update legend
                 updateLegend();
             }
+            // Keep lasso multi-selection in sync after any (re)render
+            try { refreshBulkSelectionAfterRender(); } catch (_) {}
+            // One-time discoverability hint for the new lasso selection
+            try { maybeShowLassoHint(); } catch (_) {}
         }
         
         function getFeatureBounds(feature) {
@@ -8286,6 +8704,8 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                     // Setup editing/interaction; bind popup in view mode only
                     setupFeatureInteraction(layer, feature);
                     layer.on('click', function(e) {
+                        // Ignore the synthetic click fired right after a lasso release
+                        if (__lassoJustCompleted) return;
                         if (currentMode !== MODES.EDIT) {
                             const popupContent = createFeaturePopupContent(feature);
                             layer.bindPopup(popupContent).openPopup(e.latlng);
@@ -8641,6 +9061,9 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
             if (typeof disablePointEditing === 'function') {
                 disablePointEditing();
             }
+            if (typeof clearBulkSelection === 'function') {
+                try { clearBulkSelection(); } catch (_) {}
+            }
             selectedFeature = null;
             
             // Close any open popups when switching modes
@@ -8841,7 +9264,12 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
             // Empty-map click: in Edit mode, clear current polygon/point selection if not clicking a feature
             map.on('click', function(e) {
                 try {
-                    if (currentMode !== MODES.EDIT) return;
+                    if (currentMode !== MODES.EDIT) {
+                        // A plain click outside edit modes only clears the lasso multi-selection (if any)
+                        if (__lassoJustCompleted || __suppressEmptyDeselect) return;
+                        if (multiSelection && multiSelection.size > 0) clearBulkSelection();
+                        return;
+                    }
                     // Do not clear selection while add polygon/point or remove action is active
                     if (currentTool === EDIT_TOOLS.ADD_POINT || currentTool === EDIT_TOOLS.ADD_POLYGON || currentTool === EDIT_TOOLS.REMOVE) return;
                     // Skip clearing right after vertex drag/snapping concludes
@@ -8859,6 +9287,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                             }
                         }
                     }
+                    if (multiSelection && multiSelection.size > 0) clearBulkSelection();
                     if (isEditingVertices) disableVertexEditing();
                     if (typeof disablePointEditing === 'function') disablePointEditing();
                 } catch (_) {}
@@ -9149,6 +9578,10 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
         function closeAutoCleanModal() {
             const modal = document.getElementById('autoCleanModal');
             if (modal) modal.classList.remove('show');
+            // Leave the "selection only" scope mode of the Auto-Clean modal
+            __bulkAutoCleanActive = false;
+            const scope = document.getElementById('ac-bulk-scope');
+            if (scope) scope.style.display = 'none';
         }
         
         /**
@@ -9237,6 +9670,8 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                 }
                 if (typeof disablePointEditing === 'function') disablePointEditing();
                 if (typeof window.__stopPolygonDrawing === 'function') window.__stopPolygonDrawing();
+                // Also drop any lasso multi-selection (highlights and check overlays)
+                if (typeof clearBulkSelection === 'function') clearBulkSelection();
                 // Disarm transient actions; keep persistent tool selection intact
                 try {
                     // Keep the currently selected tool active; only disarm transient actions
@@ -12573,6 +13008,9 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
         // Enhanced feature click handling
         function setupFeatureInteraction(layer, feature) {
             layer.on('click', function(e) {
+                // Swallow the synthetic click fired right after a lasso release so the
+                // freshly made multi-selection is kept and no vertex editing is started
+                if (__lassoJustCompleted) return;
                 // High-priority tool actions first
                 if (currentTool === EDIT_TOOLS.REMOVE) {
                     // Deselect any overlays first
@@ -12641,6 +13079,8 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                     return;
                 }
                 if (currentMode === MODES.EDIT) {
+                    // Starting a single-feature interaction replaces any active multi-selection
+                    if (multiSelection && multiSelection.size > 0) clearBulkSelection();
                     // When switching polygons, ensure any point edit interaction is cancelled
                     disablePointEditing();
                     if (currentTool === EDIT_TOOLS.SELECT) {
@@ -13111,6 +13551,8 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
             localStorage.setItem('georoots-editor-language', lang);
             document.documentElement.lang = lang;
             updateAllText();
+            // Refresh the dynamic bulk selection summary so it follows the language
+            try { updateBulkSelectionBar(); } catch (_) {}
             // Update layer control names if map is initialized
             if (typeof map !== 'undefined' && map) {
                 if (layerControl) {
@@ -13334,20 +13776,32 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
         // Export Modal Functions
         function showExportModal() {
+            const bulkMode = __bulkExportActive && multiSelection && multiSelection.size > 0;
             if (!currentGeoJSON || !currentGeoJSON.features || currentGeoJSON.features.length === 0) {
                 showErrorNotification(getText('noFeaturesToExport') || 'No features to export', 'amber');
                 return;
+            }
+            // Show a banner when only the current selection will be exported
+            const banner = document.getElementById('export-selection-banner');
+            if (banner) {
+                banner.textContent = getText('exportSelectedBanner').replace('{0}', multiSelection.size);
+                banner.style.display = bulkMode ? 'block' : 'none';
             }
             document.getElementById('exportModal').classList.add('show');
             // Set default filename
             const filenameInput = document.getElementById('export-filename');
             if (filenameInput && !filenameInput.value) {
-                filenameInput.value = originalFilename ? originalFilename + '-edited' : 'editor-eudr-geodata';
+                const suffix = bulkMode ? '-selected' : '-edited';
+                filenameInput.value = originalFilename ? originalFilename + suffix : 'editor-eudr-geodata';
             }
         }
 
         function closeExportModal() {
             document.getElementById('exportModal').classList.remove('show');
+            // Leave the "selection only" export scope mode
+            __bulkExportActive = false;
+            const banner = document.getElementById('export-selection-banner');
+            if (banner) banner.style.display = 'none';
         }
 
         /**
@@ -13356,7 +13810,12 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
          */
         async function exportWithFormat(format) {
             try {
-                if (!currentGeoJSON || !currentGeoJSON.features) {
+                // Bulk mode exports only the selected parts; otherwise export the whole dataset
+                const bulkMode = __bulkExportActive && multiSelection && multiSelection.size > 0;
+                const sourceFeatures = bulkMode
+                    ? buildVirtualFeaturesFromSelection()
+                    : (currentGeoJSON ? currentGeoJSON.features : null);
+                if (!sourceFeatures || sourceFeatures.length === 0) {
                     showErrorNotification(getText('noFeaturesToExport') || 'No features to export', 'amber');
                     return;
                 }
@@ -13370,7 +13829,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                 const withValidation = document.getElementById('export-with-validation').checked;
 
                 // Prepare data with validation if requested
-                let dataToExport = JSON.parse(JSON.stringify(currentGeoJSON)); // Deep copy
+                let dataToExport = { type: 'FeatureCollection', features: JSON.parse(JSON.stringify(sourceFeatures)) };
                 // Enforce RFC 7946 winding order at export time as a final safety check
                 dataToExport = normalizeWindingOrder(dataToExport);
 
@@ -15493,6 +15952,891 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
             }
         }
 
+
+        // ============================================================================
+        // MULTI-FEATURE SELECTION (CTRL/CMD LASSO) & BULK OPERATIONS MODULE
+        // ============================================================================
+        //
+        // The selection unit is a single geometry "part": a whole Polygon, one member
+        // polygon of a MultiPolygon, a whole Point, or one member point of a MultiPoint.
+        // Items are tracked by the feature's __persistentId plus the part index, so the
+        // selection survives re-renders caused by undo/redo or re-processing.
+        //
+        // Interaction: hold Ctrl/Cmd and drag on the map -> a yellow lasso polygon is
+        // drawn. When released, every part fully contained in the lasso joins the
+        // selection (lassos are additive). A floating action bar offers bulk delete,
+        // property editing, checking, export and auto-clean scoped to the selection.
+
+        /** Unique selection key for one geometry part */
+        function bulkSelKey(featureId, kind, partIndex) { return 'f:' + featureId + '|' + kind + '|' + partIndex; }
+
+        /** Find a feature in the current dataset by its __persistentId */
+        function bulkResolveFeatureById(id) {
+            if (!currentGeoJSON || !currentGeoJSON.features) return null;
+            for (let i = 0; i < currentGeoJSON.features.length; i++) {
+                const f = currentGeoJSON.features[i];
+                if (f && f.__persistentId === id) return f;
+            }
+            return null;
+        }
+
+        /** Geometry of one "part" of a feature (Polygon member / Point member) or null */
+        function bulkGetPartGeometry(feature, kind, partIndex) {
+            if (!feature || !feature.geometry || !feature.geometry.coordinates) return null;
+            const g = feature.geometry;
+            try {
+                if (kind === 'poly') {
+                    if (g.type === 'Polygon' && partIndex === 0) return { type: 'Polygon', coordinates: g.coordinates };
+                    if (g.type === 'MultiPolygon' && g.coordinates[partIndex]) return { type: 'Polygon', coordinates: g.coordinates[partIndex] };
+                } else if (kind === 'point') {
+                    if (g.type === 'Point' && partIndex === 0) return { type: 'Point', coordinates: g.coordinates };
+                    if (g.type === 'MultiPoint' && g.coordinates[partIndex]) return { type: 'Point', coordinates: g.coordinates[partIndex] };
+                }
+            } catch (_) {}
+            return null;
+        }
+
+        /** Group the selection items by their currently resolved feature object */
+        function bulkGroupByFeature() {
+            const grouped = new Map();
+            if (!multiSelection) return grouped;
+            multiSelection.forEach(function(sel) {
+                const feature = bulkResolveFeatureById(sel.featureId);
+                if (!feature || !feature.geometry) return;
+                if (!grouped.has(feature)) grouped.set(feature, { polys: new Set(), points: new Set() });
+                const entry = grouped.get(feature);
+                if (sel.kind === 'poly') entry.polys.add(sel.partIndex); else entry.points.add(sel.partIndex);
+            });
+            return grouped;
+        }
+
+        /** True if any selected part is only part of a compound (Multi*) feature */
+        function bulkHasPartialCompoundSelection() {
+            let partial = false;
+            bulkGroupByFeature().forEach(function(entry, feature) {
+                const g = feature.geometry || {};
+                const polyTotal = g.type === 'MultiPolygon' ? (g.coordinates || []).length : (g.type === 'Polygon' ? 1 : 0);
+                const pointTotal = g.type === 'MultiPoint' ? (g.coordinates || []).length : (g.type === 'Point' ? 1 : 0);
+                if (entry.polys.size > 0 && entry.polys.size < polyTotal) partial = true;
+                if (entry.points.size > 0 && entry.points.size < pointTotal) partial = true;
+            });
+            return partial;
+        }
+
+        /**
+         * Remove the selected parts from currentGeoJSON (data only, no rendering).
+         * A feature whose parts are ALL selected is removed entirely; a MultiPoint
+         * left with a single point collapses to a Point (like removePointFromMultiPoint).
+         * Returns the number of selected units removed.
+         */
+        function removeSelectionPartsFromData() {
+            if (!currentGeoJSON || !currentGeoJSON.features) return 0;
+            let removedUnits = 0;
+            const wholeFeaturesToRemove = new Set();
+            bulkGroupByFeature().forEach(function(entry, feature) {
+                const g = feature.geometry;
+                if (!g || !g.coordinates) return;
+                if (entry.polys.size > 0) {
+                    const total = g.type === 'Polygon' ? 1 : (g.type === 'MultiPolygon' ? g.coordinates.length : 0);
+                    const valid = Array.from(entry.polys).filter(function(i) { return i >= 0 && i < total; });
+                    if (valid.length >= total) { wholeFeaturesToRemove.add(feature); removedUnits += valid.length; return; }
+                    valid.sort(function(a, b) { return b - a; }).forEach(function(i) { g.coordinates.splice(i, 1); removedUnits++; });
+                }
+                if (entry.points.size > 0) {
+                    const total = g.type === 'Point' ? 1 : (g.type === 'MultiPoint' ? g.coordinates.length : 0);
+                    const valid = Array.from(entry.points).filter(function(i) { return i >= 0 && i < total; });
+                    if (valid.length >= total) { wholeFeaturesToRemove.add(feature); removedUnits += valid.length; return; }
+                    valid.sort(function(a, b) { return b - a; }).forEach(function(i) { g.coordinates.splice(i, 1); removedUnits++; });
+                    if (g.type === 'MultiPoint' && g.coordinates.length === 1) {
+                        feature.geometry = { type: 'Point', coordinates: g.coordinates[0] };
+                    }
+                }
+            });
+            if (wholeFeaturesToRemove.size > 0) {
+                currentGeoJSON.features = currentGeoJSON.features.filter(function(f) { return !wholeFeaturesToRemove.has(f); });
+            }
+            return removedUnits;
+        }
+
+        /**
+         * Build detached standalone Feature objects for each selected part.
+         * Used by Check / Export / Auto-Clean so the validation pipeline and the
+         * export machinery can treat the selection as a self-contained dataset.
+         * The owner __persistentId is carried over so feature numbering is preserved.
+         */
+        function buildVirtualFeaturesFromSelection() {
+            const virtualFeatures = [];
+            if (!multiSelection) return virtualFeatures;
+            multiSelection.forEach(function(sel) {
+                const feature = bulkResolveFeatureById(sel.featureId);
+                const part = bulkGetPartGeometry(feature, sel.kind, sel.partIndex);
+                if (!feature || !part) return;
+                try {
+                    virtualFeatures.push({
+                        type: 'Feature',
+                        properties: JSON.parse(JSON.stringify(feature.properties || {})),
+                        geometry: JSON.parse(JSON.stringify(part)),
+                        __persistentId: feature.__persistentId
+                    });
+                } catch (_) {}
+            });
+            return virtualFeatures;
+        }
+
+        /**
+         * Split partially-selected compound features so that every selected member
+         * becomes its own independent feature (with a fresh __persistentId), while
+         * the original feature keeps the unselected members. Lets bulk property
+         * editing touch only what the user actually selected.
+         * Returns the features the selection now maps to.
+         */
+        function splitSelectionIntoStandaloneFeatures() {
+            const affected = [];
+            const newFeatures = [];
+            bulkGroupByFeature().forEach(function(entry, feature) {
+                const g = feature.geometry;
+                if (!g || !g.coordinates) return;
+                const polyTotal = g.type === 'MultiPolygon' ? g.coordinates.length : (g.type === 'Polygon' ? 1 : 0);
+                const pointTotal = g.type === 'MultiPoint' ? g.coordinates.length : (g.type === 'Point' ? 1 : 0);
+                // Whole-feature selections need no split
+                if ((polyTotal > 0 && entry.polys.size >= polyTotal) || (pointTotal > 0 && entry.points.size >= pointTotal)) {
+                    affected.push(feature);
+                    return;
+                }
+                if (entry.polys.size === 0 && entry.points.size === 0) return;
+                if (g.type === 'MultiPolygon') {
+                    const remaining = [];
+                    g.coordinates.forEach(function(polyCoords, i) {
+                        if (entry.polys.has(i)) {
+                            newFeatures.push({ type: 'Feature', properties: JSON.parse(JSON.stringify(feature.properties || {})), geometry: { type: 'Polygon', coordinates: polyCoords } });
+                        } else {
+                            remaining.push(polyCoords);
+                        }
+                    });
+                    feature.geometry.coordinates = remaining;
+                } else if (g.type === 'MultiPoint') {
+                    const remaining = [];
+                    g.coordinates.forEach(function(c, i) {
+                        if (entry.points.has(i)) {
+                            newFeatures.push({ type: 'Feature', properties: JSON.parse(JSON.stringify(feature.properties || {})), geometry: { type: 'Point', coordinates: c } });
+                        } else {
+                            remaining.push(c);
+                        }
+                    });
+                    if (remaining.length === 1) {
+                        feature.geometry = { type: 'Point', coordinates: remaining[0] };
+                    } else {
+                        feature.geometry.coordinates = remaining;
+                    }
+                }
+            });
+            newFeatures.forEach(function(nf) {
+                ensureFeatureId(nf);
+                currentGeoJSON.features.push(nf);
+                affected.push(nf);
+            });
+            return affected;
+        }
+
+        /** Commit any in-progress single-feature edit before a bulk operation */
+        function bulkPrepareForAction() {
+            try { if (typeof isEditingVertices !== 'undefined' && isEditingVertices) disableVertexEditing(); } catch (_) {}
+            try { if (typeof disablePointEditing === 'function') disablePointEditing(); } catch (_) {}
+        }
+
+        function ensureBulkSelectionPanes() {
+            if (!map) return;
+            if (!map.getPane('lassoPane')) {
+                const p = map.createPane('lassoPane');
+                p.style.zIndex = '650';
+                p.style.pointerEvents = 'none';
+            }
+            if (!map.getPane('bulkSelectPane')) {
+                const p = map.createPane('bulkSelectPane');
+                p.style.zIndex = '615';
+                p.style.pointerEvents = 'none';
+            }
+        }
+
+        /** Draw the persistent green highlight over every selected part */
+        function renderBulkSelectionHighlights() {
+            if (!map) return;
+            ensureBulkSelectionPanes();
+            if (!multiSelectOverlayGroup) multiSelectOverlayGroup = L.featureGroup();
+            multiSelectOverlayGroup.clearLayers();
+            if (!map.hasLayer(multiSelectOverlayGroup)) multiSelectOverlayGroup.addTo(map);
+            multiSelection.forEach(function(sel) {
+                const feature = bulkResolveFeatureById(sel.featureId);
+                const part = bulkGetPartGeometry(feature, sel.kind, sel.partIndex);
+                if (!part) return;
+                try {
+                    if (sel.kind === 'poly') {
+                        const latlngs = part.coordinates.map(function(ring) {
+                            return ring.map(function(c) { return [c[1], c[0]]; });
+                        });
+                        L.polygon(latlngs, {
+                            pane: 'bulkSelectPane', interactive: false,
+                            color: '#2d6a4f', weight: 3, opacity: 0.95,
+                            fillColor: '#40916c', fillOpacity: 0.25, fillRule: 'nonzero'
+                        }).addTo(multiSelectOverlayGroup);
+                    } else {
+                        L.circleMarker([part.coordinates[1], part.coordinates[0]], {
+                            pane: 'bulkSelectPane', interactive: false,
+                            color: '#2d6a4f', weight: 2, radius: 9,
+                            fillColor: '#2d6a4f', fillOpacity: 0.95
+                        }).addTo(multiSelectOverlayGroup);
+                    }
+                } catch (_) {}
+            });
+        }
+
+        /** Show/hide the floating action bar and refresh the selection count label */
+        function updateBulkSelectionBar() {
+            const bar = document.getElementById('bulkSelectionBar');
+            if (!bar) return;
+            if (!multiSelection || multiSelection.size === 0) { bar.classList.remove('show'); return; }
+            let areas = 0, points = 0;
+            multiSelection.forEach(function(sel) { if (sel.kind === 'poly') areas++; else points++; });
+            const summaryEl = document.getElementById('bulkSelectionSummary');
+            if (summaryEl) summaryEl.textContent = getText('bulkSelectionSummary', areas, points);
+            bar.classList.add('show');
+        }
+
+        /** Re-bind the selection after a (re)render: drop vanished parts, redraw highlights */
+        function refreshBulkSelectionAfterRender() {
+            if (!multiSelection || multiSelection.size === 0) return;
+            const staleKeys = [];
+            multiSelection.forEach(function(sel, key) {
+                const feature = bulkResolveFeatureById(sel.featureId);
+                if (!feature || !bulkGetPartGeometry(feature, sel.kind, sel.partIndex)) staleKeys.push(key);
+            });
+            staleKeys.forEach(function(k) { multiSelection.delete(k); });
+            renderBulkSelectionHighlights();
+            updateBulkSelectionBar();
+        }
+
+        function clearBulkSelection() {
+            if (!multiSelection) multiSelection = new Map();
+            multiSelection.clear();
+            try {
+                if (multiSelectOverlayGroup) {
+                    if (map && map.hasLayer(multiSelectOverlayGroup)) map.removeLayer(multiSelectOverlayGroup);
+                    multiSelectOverlayGroup.clearLayers();
+                }
+            } catch (_) {}
+            try {
+                if (bulkCheckOverlayGroup) {
+                    if (map && map.hasLayer(bulkCheckOverlayGroup)) map.removeLayer(bulkCheckOverlayGroup);
+                    bulkCheckOverlayGroup = null;
+                }
+            } catch (_) {}
+            updateBulkSelectionBar();
+        }
+
+        // ----- Lasso drawing -----
+
+        function setupLassoInteraction() {
+            if (!map) return;
+            ensureBulkSelectionPanes();
+            // Bind the mousedown interception exactly ONCE per page load, on the DOCUMENT
+            // capture phase so it runs before every Leaflet handler. We deliberately use a
+            // module-scoped flag (NOT map._lassoBound) and resolve the map container LIVE
+            // inside the handler, so a stale closure or a later map (re)creation can never
+            // silently disable the lasso.
+            if (window.__lassoDocBound) return;
+            window.__lassoDocBound = true;
+            // Ctrl/Cmd + left button on the map: capture on document and
+            // stopImmediatePropagation() so Leaflet can never start a pan mid-lasso.
+            document.addEventListener('mousedown', function(e) {
+                // Records why the lasso did/didn't start (silent; inspect window.__lassoDiag).
+                function d(reason) { window.__lassoDiag = reason; return reason; }
+                if (!(e.ctrlKey || e.metaKey) || e.button !== 0) { d('return:ctrl/button'); return; }
+                const liveMap = (typeof map !== 'undefined') ? map : null;
+                if (!liveMap) { d('return:no-map'); return; }
+                if (!currentGeoJSON || !currentGeoJSON.features || currentGeoJSON.features.length === 0) { d('return:no-features'); return; }
+                // Only intercept presses that are actually on the live map container
+                const liveContainer = liveMap.getContainer();
+                if (!(e.target === liveContainer || liveContainer.contains(e.target))) { d('return:not-on-map'); return; }
+                // Do not interfere with an active Add-Polygon drawing
+                if (drawingPolygon) { d('return:drawingPolygon'); return; }
+                // Ignore presses on Leaflet controls (layer switcher, zoom buttons...)
+                if (e.target && typeof e.target.closest === 'function' && e.target.closest('.leaflet-control')) { d('return:control'); return; }
+                d('pass->start');
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                const wasDraggingEnabled = !!(liveMap.dragging && liveMap.dragging.enabled && liveMap.dragging.enabled());
+                if (liveMap.dragging) liveMap.dragging.disable();
+                lassoDrawState = { points: [liveMap.mouseEventToLatLng(e)], wasDraggingEnabled: wasDraggingEnabled };
+                lassoLayer = L.polygon([], {
+                    pane: 'lassoPane', interactive: false,
+                    color: '#ffc107', weight: 2.5, dashArray: '8 4',
+                    fillColor: '#ffc107', fillOpacity: 0.15
+                }).addTo(liveMap);
+                document.addEventListener('mousemove', onLassoMouseMove);
+                document.addEventListener('mouseup', onLassoMouseUp);
+            }, true); // capture phase
+            // Releasing Ctrl/Cmd completes the lasso ("select when released"); Escape aborts
+            document.addEventListener('keyup', function(e) {
+                if (!lassoDrawState) return;
+                if (e.key === 'Control' || e.key === 'Meta') finishLassoDraw();
+                else if (e.key === 'Escape') cancelLassoDraw();
+            });
+            // Crosshair cursor hints that the lasso is available while Ctrl/Cmd is held
+            document.addEventListener('keydown', function(e) {
+                if ((e.key === 'Control' || e.key === 'Meta') && map) {
+                    try { map.getContainer().classList.add('lasso-ready'); } catch (_) {}
+                }
+            });
+            document.addEventListener('keyup', function(e) {
+                if ((e.key === 'Control' || e.key === 'Meta') && map) {
+                    try { map.getContainer().classList.remove('lasso-ready'); } catch (_) {}
+                }
+            });
+        }
+
+        function onLassoMouseMove(e) {
+            if (!lassoDrawState) return;
+            try {
+                const pt = map.mouseEventToLatLng(e);
+                const last = lassoDrawState.points[lassoDrawState.points.length - 1];
+                // Keep the polygon light: only add vertices that actually moved
+                if (map.latLngToContainerPoint(pt).distanceTo(map.latLngToContainerPoint(last)) >= 5) {
+                    lassoDrawState.points.push(pt);
+                    if (lassoLayer) lassoLayer.setLatLngs(lassoDrawState.points);
+                }
+            } catch (_) {}
+        }
+
+        function onLassoMouseUp() {
+            document.removeEventListener('mousemove', onLassoMouseMove);
+            document.removeEventListener('mouseup', onLassoMouseUp);
+            if (!lassoDrawState) return;
+            // Barely moved: treat as a plain Ctrl+click and keep single-select behavior
+            if (lassoDrawState.points.length < 2) { cancelLassoDraw(); return; }
+            finishLassoDraw();
+        }
+
+        function finishLassoDraw() {
+            const state = lassoDrawState;
+            lassoDrawState = null;
+            document.removeEventListener('mousemove', onLassoMouseMove);
+            document.removeEventListener('mouseup', onLassoMouseUp);
+            if (lassoLayer) { try { map.removeLayer(lassoLayer); } catch (_) {} lassoLayer = null; }
+            if (map && map.dragging && state && state.wasDraggingEnabled) map.dragging.enable();
+            if (!state || state.points.length < 3) return;
+            try {
+                const added = selectPartsInsideLasso(state.points);
+                // Swallow the synthetic click that follows the release so the new
+                // selection is neither cleared nor replaced by a single selection
+                __lassoJustCompleted = true;
+                setTimeout(function() { __lassoJustCompleted = false; }, 300);
+                suppressEmptyDeselect(300);
+                renderBulkSelectionHighlights();
+                updateBulkSelectionBar();
+                if (added === 0) showErrorNotification(getText('lassoEmpty'), 'amber');
+            } catch (err) {
+                console.warn('Lasso selection failed', err);
+                showErrorNotification(getText('lassoFailed'), 'red');
+            }
+        }
+
+        function cancelLassoDraw() {
+            const state = lassoDrawState;
+            lassoDrawState = null;
+            document.removeEventListener('mousemove', onLassoMouseMove);
+            document.removeEventListener('mouseup', onLassoMouseUp);
+            if (lassoLayer) { try { map.removeLayer(lassoLayer); } catch (_) {} lassoLayer = null; }
+            if (map && map.dragging && state && state.wasDraggingEnabled) map.dragging.enable();
+        }
+
+        /**
+         * Bounding box [minX,minY,maxX,maxY] of a ring of [x,y] pairs.
+         * Returns null when the ring holds no usable coordinates, so that a
+         * degenerate ring can never slip through via "Infinity >= x".
+         */
+        function bulkBBoxOfRing(ring) {
+            let minX = null, minY = null, maxX = null, maxY = null;
+            if (!ring || typeof ring.length !== 'number') return null;
+            for (let i = 0; i < ring.length; i++) {
+                const c = ring[i];
+                if (!c || c.length < 2) continue;
+                const x = c[0], y = c[1];
+                if (typeof x !== 'number' || typeof y !== 'number' || isNaN(x) || isNaN(y)) continue;
+                if (minX === null || x < minX) minX = x;
+                if (minY === null || y < minY) minY = y;
+                if (maxX === null || x > maxX) maxX = x;
+                if (maxY === null || y > maxY) maxY = y;
+            }
+            if (minX === null) return null;
+            return [minX, minY, maxX, maxY];
+        }
+        function bulkBBoxValid(b) {
+            return b && typeof b[0] === 'number' && !isNaN(b[0]);
+        }
+        function bulkBBoxWithin(a, b) {
+            if (!bulkBBoxValid(a) || !bulkBBoxValid(b)) return false;
+            return a[0] >= b[0] && a[1] >= b[1] && a[2] <= b[2] && a[3] <= b[3];
+        }
+
+        /** Ray-casting point-in-polygon: ring = array of [x,y] pairs, closed or not */
+        function bulkPointInRing(x, y, ring) {
+            let inside = false;
+            for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+                const xi = ring[i][0], yi = ring[i][1];
+                const xj = ring[j][0], yj = ring[j][1];
+                if (((yi > y) !== (yj > y)) && (x < (xj - xi) * (y - yi) / (yj - yi) + xi)) inside = !inside;
+            }
+            return inside;
+        }
+
+        /** True when segments p1p2 and p3p4 cross in their interiors */
+        function bulkSegsIntersect(p1, p2, p3, p4) {
+            function cross(ox, oy, ax, ay, bx, by) { return (ax - ox) * (by - oy) - (ay - oy) * (bx - ox); }
+            const d1 = cross(p3[0], p3[1], p4[0], p4[1], p1[0], p1[1]);
+            const d2 = cross(p3[0], p3[1], p4[0], p4[1], p2[0], p2[1]);
+            const d3 = cross(p1[0], p1[1], p2[0], p2[1], p3[0], p3[1]);
+            const d4 = cross(p1[0], p1[1], p2[0], p2[1], p4[0], p4[1]);
+            return ((d1 > 0 && d2 < 0) || (d1 < 0 && d2 > 0)) &&
+                   ((d3 > 0 && d4 < 0) || (d3 < 0 && d4 > 0));
+        }
+
+        /** True when any edge of ringA properly crosses any edge of ringB (bbox pre-rejected) */
+        function bulkRingsCross(ringA, bbA, ringB, bbB) {
+            if (!bulkBBoxWithin(bbA, bbB) && !bulkBBoxWithin(bbB, bbA) && !bulkBBoxOverlaps(bbA, bbB)) return false;
+            for (let i = 0; i + 1 < ringA.length; i++) {
+                for (let j = 0; j + 1 < ringB.length; j++) {
+                    if (bulkSegsIntersect(ringA[i], ringA[i + 1], ringB[j], ringB[j + 1])) return true;
+                }
+            }
+            return false;
+        }
+
+        function bulkBBoxOverlaps(a, b) {
+            if (!bulkBBoxValid(a) || !bulkBBoxValid(b)) return false;
+            return !(a[2] < b[0] || b[2] < a[0] || a[3] < b[1] || b[3] < a[1]);
+        }
+
+        /**
+         * A polygon part counts as selected only when FULLY inside the lasso:
+         * its exterior ring has a valid bbox inside the lasso bbox, every vertex
+         * lies inside the lasso ring, and no edge crosses the lasso boundary.
+         * The exterior ring must be a real ring (>=4 pts); a degenerate polygon
+         * is never selected (avoids vacuous "nothing checked -> true"). Holes are
+         * carried along with the part and not tested separately, matching the
+         * whole-Polygon selection granularity. Pure JS (the inlined turf build
+         * has no usable polygon-within for raw geometries).
+         */
+        function bulkPolyFullyInsideLasso(coords, lassoRing, lassoBBox) {
+            if (!coords || !Array.isArray(coords) || coords.length === 0) return false;
+            const ext = coords[0];
+            if (!ext || !Array.isArray(ext) || ext.length < 4) return false;
+            const bb = bulkBBoxOfRing(ext);
+            if (!bulkBBoxValid(bb)) return false;
+            if (!bulkBBoxWithin(bb, lassoBBox)) return false; // outside the lasso bbox already
+            for (let i = 0; i < ext.length; i++) {
+                if (!bulkPointInRing(ext[i][0], ext[i][1], lassoRing)) return false;
+            }
+            if (bulkRingsCross(ext, bb, lassoRing, lassoBBox)) return false;
+            return true;
+        }
+
+        /**
+         * Add every geometry part fully contained in the lasso polygon to the
+         * selection (additive). Returns the number of newly selected items.
+         */
+        function selectPartsInsideLasso(points) {
+            if (!currentGeoJSON || !currentGeoJSON.features || points.length < 3) return 0;
+            const lassoRing = points.map(function(p) { return [p.lng, p.lat]; });
+            lassoRing.push(lassoRing[0]);
+            const lassoBBox = bulkBBoxOfRing(lassoRing);
+            if (!bulkBBoxValid(lassoBBox)) return 0;
+            let added = 0;
+            currentGeoJSON.features.forEach(function(feature) {
+                if (!feature || !feature.geometry || typeof feature.__persistentId !== 'number') return;
+                const g = feature.geometry;
+                let parts = null;
+                if (g.type === 'Polygon') parts = [{ kind: 'poly', partIndex: 0 }];
+                else if (g.type === 'MultiPolygon') parts = (g.coordinates || []).map(function(_, i) { return { kind: 'poly', partIndex: i }; });
+                else if (g.type === 'Point') parts = [{ kind: 'point', partIndex: 0 }];
+                else if (g.type === 'MultiPoint') parts = (g.coordinates || []).map(function(_, i) { return { kind: 'point', partIndex: i }; });
+                if (!parts) return;
+                parts.forEach(function(part) {
+                    const partGeom = bulkGetPartGeometry(feature, part.kind, part.partIndex);
+                    if (!partGeom) return;
+                    let inside = false;
+                    if (partGeom.type === 'Point') {
+                        const c = partGeom.coordinates;
+                        if (c && c.length >= 2 && c[0] >= lassoBBox[0] && c[0] <= lassoBBox[2] && c[1] >= lassoBBox[1] && c[1] <= lassoBBox[3]) {
+                            inside = bulkPointInRing(c[0], c[1], lassoRing);
+                        }
+                    } else if (partGeom.type === 'Polygon') {
+                        inside = bulkPolyFullyInsideLasso(partGeom.coordinates, lassoRing, lassoBBox);
+                    }
+                    if (!inside) return;
+                    const key = bulkSelKey(feature.__persistentId, part.kind, part.partIndex);
+                    if (multiSelection.has(key)) return; // already selected
+                    multiSelection.set(key, { featureId: feature.__persistentId, kind: part.kind, partIndex: part.partIndex });
+                    added++;
+                });
+            });
+            return added;
+        }
+
+        // ----- Bulk delete -----
+
+        function openBulkDeleteModal() {
+            if (!multiSelection || multiSelection.size === 0) { showErrorNotification(getText('bulkNoSelection'), 'amber'); return; }
+            bulkPrepareForAction();
+            const msg = document.getElementById('bulkDeleteMessage');
+            if (msg) msg.textContent = getText('bulkDeleteConfirm', multiSelection.size);
+            document.getElementById('bulkDeleteModal').classList.add('show');
+        }
+        function closeBulkDeleteModal() {
+            const modal = document.getElementById('bulkDeleteModal');
+            if (modal) modal.classList.remove('show');
+        }
+        function confirmBulkDelete() {
+            closeBulkDeleteModal();
+            if (!multiSelection || multiSelection.size === 0) return;
+            try {
+                bulkPrepareForAction();
+                if (typeof deactivateGeometryValidation === 'function') deactivateGeometryValidation(true);
+                pushUndoSnapshot('bulk-delete');
+                const removed = removeSelectionPartsFromData();
+                clearBulkSelection();
+                processGeoJSON(currentGeoJSON, true);
+                if (removed > 0) showErrorNotification(getText('bulkDeleted', removed), 'green');
+            } catch (err) {
+                console.error('Bulk delete error:', err);
+                showErrorNotification(getText('bulkDeleteFailed'), 'red');
+            }
+        }
+
+        // ----- Bulk property editing -----
+
+        function openBulkPropertiesModal() {
+            if (!multiSelection || multiSelection.size === 0) { showErrorNotification(getText('bulkNoSelection'), 'amber'); return; }
+            bulkPrepareForAction();
+            const title = document.getElementById('bulkPropertiesTitle');
+            if (title) title.textContent = getText('bulkPropertiesTitle', multiSelection.size);
+            const removeAll = document.getElementById('bulk-props-remove-all');
+            if (removeAll) removeAll.checked = false;
+            document.getElementById('bulk-props-key').value = '';
+            document.getElementById('bulk-props-value').value = '';
+            const info = document.getElementById('bulkPropsInfo');
+            if (info) info.style.display = bulkHasPartialCompoundSelection() ? 'block' : 'none';
+            document.getElementById('bulkPropertiesModal').classList.add('show');
+        }
+        function closeBulkPropertiesModal() {
+            const modal = document.getElementById('bulkPropertiesModal');
+            if (modal) modal.classList.remove('show');
+        }
+        function applyBulkProperties() {
+            const removeAll = document.getElementById('bulk-props-remove-all').checked;
+            const key = document.getElementById('bulk-props-key').value.trim();
+            const value = document.getElementById('bulk-props-value').value.trim();
+            if (!removeAll && !key) { showErrorNotification(getText('bulkPropsKeyRequired'), 'amber'); return; }
+            if (!multiSelection || multiSelection.size === 0) { closeBulkPropertiesModal(); return; }
+            try {
+                if (typeof deactivateGeometryValidation === 'function') deactivateGeometryValidation(true);
+                pushUndoSnapshot('bulk-properties');
+                // Make partially selected members independent before touching properties
+                const affected = splitSelectionIntoStandaloneFeatures();
+                affected.forEach(function(f) {
+                    if (removeAll) f.properties = {};
+                    if (key) {
+                        if (!f.properties) f.properties = {};
+                        f.properties[key] = value;
+                    }
+                });
+                closeBulkPropertiesModal();
+                clearBulkSelection();
+                processGeoJSON(currentGeoJSON, true);
+                showErrorNotification(getText('bulkPropertiesApplied', affected.length), 'green');
+            } catch (err) {
+                console.error('Bulk properties error:', err);
+                showErrorNotification(getText('bulkPropertiesFailed'), 'red');
+            }
+        }
+
+        // ----- Bulk check (validation scoped to the selection) -----
+
+        async function bulkCheckSelected() {
+            if (!multiSelection || multiSelection.size === 0) { showErrorNotification(getText('bulkNoSelection'), 'amber'); return; }
+            bulkPrepareForAction();
+            const virtualFeatures = buildVirtualFeaturesFromSelection();
+            if (virtualFeatures.length === 0) { showErrorNotification(getText('bulkNoSelection'), 'amber'); return; }
+            try {
+                __validationCancelled = false;
+                openValidationProgress();
+                // "Use Previous Results" refers to whole-dataset validation - not offered here
+                const usePrevBtn = document.getElementById('val-use-previous-btn');
+                if (usePrevBtn) usePrevBtn.style.display = 'none';
+                const results = await runValidationPipeline({ type: 'FeatureCollection', features: virtualFeatures }, {
+                    stages: ['geometricValidity', 'duplicateVertices', 'duplicates', 'selfIntersections', 'holes', 'slivers', 'overlaps'],
+                    fix: false,
+                    progressCallback: function(progress, msg) { setValidationProgress(Math.round(progress * 100), msg); }
+                });
+                if (__validationCancelled) { closeValidationProgress(); return; }
+                closeValidationProgress();
+                renderBulkCheckOverlays(virtualFeatures, results);
+                openValidationReportModal(buildBulkCheckReportData(virtualFeatures.length, results));
+            } catch (err) {
+                closeValidationProgress();
+                if (('' + err).toLowerCase().includes('cancel')) return;
+                showErrorNotification(getText('validationErrorOccurred', err && err.message ? err.message : err), 'red');
+            } finally {
+                __validationCancelled = false;
+            }
+        }
+
+        /** Shape the pipeline results into the report modal format, scoped to the selection */
+        function buildBulkCheckReportData(totalSelected, results) {
+            const issues = results.issues || {};
+            const invalidGeometries = (issues.geometricValidity && issues.geometricValidity.invalidFeatures) || [];
+            const duplicateVertices = (issues.duplicateVertices && issues.duplicateVertices.invalidFeatures) || [];
+            const duplicateFeatures = (issues.duplicates && issues.duplicates.duplicateFeatures) || [];
+            const duplicatePointFeatures = (issues.duplicates && issues.duplicates.duplicatePointFeatures) || [];
+            const selfIntersecting = (issues.selfIntersections && issues.selfIntersections.selfIntersectingFeatures) || [];
+            const withHoles = (issues.holes && issues.holes.featuresWithHoles) || [];
+            const sharpAngles = (issues.slivers && issues.slivers.featuresWithSharpAngles) || [];
+            const overlappingPairs = (issues.overlaps && issues.overlaps.overlappingPairs) || [];
+            // Exclude Point/MultiPoint from duplicateCount (double-counted via duplicatePoints)
+            const duplicateCount = duplicateFeatures.filter(function(dup) {
+                const t = results.features[dup.featureIndex] && results.features[dup.featureIndex].geometry
+                    ? results.features[dup.featureIndex].geometry.type : null;
+                return t !== 'Point' && t !== 'MultiPoint';
+            }).length;
+            const issueFeatureSet = new Set();
+            [invalidGeometries, duplicateVertices, duplicateFeatures, duplicatePointFeatures,
+             selfIntersecting, withHoles, sharpAngles].forEach(function(list) {
+                list.forEach(function(item) { issueFeatureSet.add(item.featureIndex); });
+            });
+            return {
+                totalFeatures: totalSelected,
+                validFeatures: totalSelected - issueFeatureSet.size,
+                featuresWithIssues: issueFeatureSet.size,
+                hasIssues: issueFeatureSet.size > 0,
+                invalidGeometries: invalidGeometries.length,
+                duplicateVertices: duplicateVertices.length,
+                duplicates: duplicateCount,
+                duplicatePoints: duplicatePointFeatures.length,
+                selfIntersections: selfIntersecting.length,
+                holes: withHoles.length,
+                slivers: sharpAngles.length,
+                overlaps: overlappingPairs.length,
+                unsupportedTypes: []
+            };
+        }
+
+        /** Red violation overlays over the selected items (same style as validation mode) */
+        function renderBulkCheckOverlays(virtualFeatures, results) {
+            if (!map) return;
+            if (!map.getPane('validationErrorPane')) {
+                const p = map.createPane('validationErrorPane');
+                p.style.zIndex = '620';
+                p.style.pointerEvents = 'auto';
+            }
+            if (!window.__validationErrorRenderer) {
+                window.__validationErrorRenderer = L.svg({ pane: 'validationErrorPane' });
+                window.__validationErrorRenderer.addTo(map);
+            }
+            if (!bulkCheckOverlayGroup) bulkCheckOverlayGroup = L.featureGroup().addTo(map);
+            bulkCheckOverlayGroup.clearLayers();
+            const messagesByIndex = new Map();
+            function addMsg(idx, msg) {
+                if (typeof idx !== 'number' || !msg) return;
+                if (!messagesByIndex.has(idx)) messagesByIndex.set(idx, []);
+                const arr = messagesByIndex.get(idx);
+                if (!arr.includes(msg)) arr.push(msg);
+            }
+            const issues = results.issues || {};
+            ((issues.geometricValidity && issues.geometricValidity.invalidFeatures) || []).forEach(function(i) {
+                addMsg(i.featureIndex, i.reason || 'Invalid geometry structure');
+            });
+            ((issues.duplicateVertices && issues.duplicateVertices.invalidFeatures) || []).forEach(function(i) {
+                addMsg(i.featureIndex, i.reason || 'Duplicate vertices detected');
+            });
+            ((issues.duplicates && issues.duplicates.duplicateFeatures) || []).forEach(function(i) {
+                addMsg(i.featureIndex, 'Duplicate geometry detected');
+            });
+            ((issues.duplicates && issues.duplicates.duplicatePointFeatures) || []).forEach(function(i) {
+                addMsg(i.featureIndex, 'Duplicate point detected');
+            });
+            ((issues.selfIntersections && issues.selfIntersections.selfIntersectingFeatures) || []).forEach(function(i) {
+                const kinks = i.kinkCount || 0;
+                addMsg(i.featureIndex, kinks > 1 ? 'Self-intersecting geometry (' + kinks + ' intersection points)' : 'Self-intersecting geometry');
+            });
+            ((issues.holes && issues.holes.featuresWithHoles) || []).forEach(function(i) {
+                addMsg(i.featureIndex, i.holesCount === 1 ? 'Polygon has a hole' : 'Polygon has ' + i.holesCount + ' holes');
+            });
+            ((issues.slivers && issues.slivers.featuresWithSharpAngles) || []).forEach(function(i) {
+                addMsg(i.featureIndex, i.count === 1 ? 'Sharp angle below 4\u00B0' : i.count + ' sharp angles below 4\u00B0');
+            });
+            ((issues.overlaps && issues.overlaps.overlappingPairs) || []).forEach(function(pair) {
+                if (!pair) return;
+                const idA = pair.persistentIdA !== undefined ? pair.persistentIdA : pair.indexA;
+                const idB = pair.persistentIdB !== undefined ? pair.persistentIdB : pair.indexB;
+                addMsg(pair.indexA, 'Overlaps with feature ' + idB);
+                addMsg(pair.indexB, 'Overlaps with feature ' + idA);
+            });
+            const tooltipOptions = { direction: 'top', sticky: true, opacity: 0.95, className: 'validation-tooltip' };
+            messagesByIndex.forEach(function(msgs, idx) {
+                const vf = virtualFeatures[idx];
+                if (!vf || !vf.geometry) return;
+                try {
+                    const header = '<div class="tooltip-header">Feature ' + (vf.__persistentId !== undefined ? vf.__persistentId : '\u2014') + ' - ' + vf.geometry.type + '</div>';
+                    const tooltip = '<div class="tooltip-content">' + header + msgs.join('<br>') + '</div>';
+                    let layer = null;
+                    if (vf.geometry.type === 'Point') {
+                        layer = L.circleMarker([vf.geometry.coordinates[1], vf.geometry.coordinates[0]], {
+                            renderer: window.__validationErrorRenderer, pane: 'validationErrorPane',
+                            bubblingMouseEvents: false, color: '#dc3545', weight: 2,
+                            fillColor: '#dc3545', fillOpacity: 0.5, radius: 9
+                        });
+                    } else {
+                        const latlngs = vf.geometry.coordinates.map(function(ring) {
+                            return ring.map(function(c) { return [c[1], c[0]]; });
+                        });
+                        layer = L.polygon(latlngs, {
+                            renderer: window.__validationErrorRenderer, pane: 'validationErrorPane',
+                            bubblingMouseEvents: false, color: '#dc3545', weight: 2,
+                            fillColor: '#dc3545', fillOpacity: 0.35, opacity: 0.9, fillRule: 'nonzero'
+                        });
+                    }
+                    layer.bindTooltip(tooltip, tooltipOptions);
+                    layer.on('mouseover', function(e) { layer.openTooltip(e.latlng); });
+                    layer.on('mousemove', function(e) { layer.openTooltip(e.latlng); });
+                    layer.on('mouseout', function() { layer.closeTooltip(); });
+                    // Prevent clicks from triggering underlying edit handlers
+                    layer.on('click', function(e) {
+                        if (e && e.originalEvent) {
+                            try { e.originalEvent.preventDefault(); e.originalEvent.stopPropagation(); } catch (_) {}
+                        }
+                    });
+                    bulkCheckOverlayGroup.addLayer(layer);
+                } catch (_) {}
+            });
+        }
+
+        // ----- Bulk export -----
+
+        function openBulkExportModal() {
+            if (!multiSelection || multiSelection.size === 0) { showErrorNotification(getText('bulkNoSelection'), 'amber'); return; }
+            bulkPrepareForAction();
+            __bulkExportActive = true;
+            showExportModal();
+        }
+
+        // ----- Bulk auto-clean -----
+
+        function openBulkAutoCleanModal() {
+            if (!multiSelection || multiSelection.size === 0) { showErrorNotification(getText('bulkNoSelection'), 'amber'); return; }
+            bulkPrepareForAction();
+            if (typeof deactivateGeometryValidation === 'function') deactivateGeometryValidation(true);
+            __bulkAutoCleanActive = true;
+            openAutoCleanModal();
+            const scope = document.getElementById('ac-bulk-scope');
+            if (scope) {
+                scope.textContent = getText('bulkAutoCleanScope', multiSelection.size);
+                scope.style.display = 'block';
+            }
+        }
+
+        /** Auto-Clean modal "Clean" button: route to the selected-features flow when active */
+        function handleAutoCleanStart() {
+            if (__bulkAutoCleanActive) startBulkAutoClean();
+            else startAutoClean();
+        }
+
+        async function startBulkAutoClean() {
+            const selectedCount = multiSelection ? multiSelection.size : 0;
+            if (selectedCount === 0) { closeAutoCleanModal(); return; }
+            // Snapshot for revert on cancel/failure; the virtual copy is the pipeline input
+            const snapshot = currentGeoJSON ? JSON.parse(JSON.stringify(currentGeoJSON)) : null;
+            const virtualFeatures = buildVirtualFeaturesFromSelection();
+            try {
+                closeAutoCleanModal();
+                if (virtualFeatures.length === 0) { showErrorNotification(getText('bulkNoSelection'), 'amber'); return; }
+                openAutoCleanProgress();
+                __autoCleanCancelled = false;
+                const options = readAutoCleanOptions();
+                // Same UI-option -> stage mapping as the full-dataset Auto-Clean
+                const stageMap = {
+                    duplicates: 'duplicates',
+                    selfIntersect: 'selfIntersections',
+                    holes: 'holes',
+                    slivers: 'slivers',
+                    smallpolygons: 'smallPolygons',
+                    overlap: 'overlaps',
+                    pointsinpolygons: 'pointsInPolygons',
+                    collinear: 'collinear'
+                };
+                const requestedStages = Object.keys(options)
+                    .filter(function(key) { return options[key] && stageMap[key]; })
+                    .map(function(key) { return stageMap[key]; });
+                const results = await runValidationPipeline({ type: 'FeatureCollection', features: virtualFeatures }, {
+                    stages: requestedStages,
+                    fix: true,
+                    progressCallback: function(progress, msg) { setProgress(progress, msg); },
+                    autoCleanOptions: options
+                });
+                // Push a full undo snapshot only now that the pipeline SUCCEEDED and we are
+                // about to mutate the dataset. Placing it here (not before the run) avoids
+                // creating a no-op undo entry when the user cancels or the run errors out —
+                // those cases revert via the local `snapshot` below.
+                pushUndoSnapshot('bulk-auto-clean');
+                mergeCleanedSelectionBack(results.features);
+                clearBulkSelection();
+                processGeoJSON(currentGeoJSON, true);
+                setProgress(100, 'Completed');
+                await delay(400);
+                closeAutoCleanProgress();
+                const removedCount = Math.max(0, virtualFeatures.length - (results.features ? results.features.length : 0));
+                showErrorNotification(getText('bulkAutoCleanDone', removedCount, selectedCount), 'green');
+            } catch (err) {
+                closeAutoCleanProgress();
+                if (!(('' + err).toLowerCase().includes('cancel'))) {
+                    showErrorNotification(getText('autoCleanErrorOccurred', err.message || err), 'red');
+                }
+                // Revert to the pre-clean data
+                try {
+                    if (snapshot) processGeoJSON(snapshot, true);
+                } catch (re) {
+                    showErrorNotification(getText('autoCleanRevertFailed', re.message || re), 'red');
+                }
+                clearBulkSelection();
+            } finally {
+                __autoCleanCancelled = false;
+                __bulkAutoCleanActive = false;
+            }
+        }
+
+        /**
+         * Replace the selected parts with their cleaned counterparts: the originals
+         * are removed from the dataset and the surviving cleaned features are added
+         * back as standalone features carrying the owner's __persistentId.
+         */
+        function mergeCleanedSelectionBack(cleanedFeatures) {
+            removeSelectionPartsFromData();
+            (cleanedFeatures || []).forEach(function(f) {
+                if (!f || !f.geometry) return;
+                if (typeof f.__persistentId !== 'number') ensureFeatureId(f);
+                currentGeoJSON.features.push(f);
+            });
+        }
+
+        /** One-time hint that teaches the lasso gesture, shown after the first data load */
+        function maybeShowLassoHint() {
+            try {
+                if (localStorage.getItem('georoots-editor-lasso-hint-shown')) return;
+                localStorage.setItem('georoots-editor-lasso-hint-shown', '1');
+                setTimeout(function() { showErrorNotification(getText('lassoHint'), 'green'); }, 1200);
+            } catch (_) {}
+        }
+        // ============================================================================
+        // END MULTI-FEATURE SELECTION & BULK OPERATIONS MODULE
+        // ============================================================================
 
         // Undo/Redo stacks for geometry changes only
         const __UNDO_LIMIT = 10;
