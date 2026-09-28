@@ -16316,15 +16316,15 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
             // selection. Any real drag keeps drawing the lasso even if it began
             // directly on top of a feature.
             if (lassoDrawState.points.length < 2) {
-                let removed = 0;
-                try { removed = deselectPartsAtLatLng(downPoint); } catch (_) {}
+                let action = 'none';
+                try { action = togglePartAtLatLng(downPoint); } catch (_) {}
                 cancelLassoDraw();
                 // A stationary Ctrl+click is always the lasso-toggle gesture: swallow the
                 // synthetic click that follows the release so it never opens the feature
                 // popup nor triggers an accidental empty-map clear.
                 __lassoJustCompleted = true;
                 setTimeout(function() { __lassoJustCompleted = false; }, 300);
-                if (removed > 0) {
+                if (action !== 'none') {
                     renderBulkSelectionHighlights();
                     updateBulkSelectionBar();
                 }
@@ -16390,36 +16390,49 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
         }
 
         /**
-         * Remove the single best-matching selected part under a latlng: a nearby
-         * point marker wins (points are drawn on top); otherwise the smallest
-         * containing polygon. Returns 1 when a part was removed, else 0.
+         * Toggle the single best-matching feature part under a latlng in/out of the
+         * selection: a nearby point marker wins (points are drawn on top); otherwise
+         * the smallest containing polygon. Adds it if it wasn't selected, removes it
+         * if it was. Returns 'added' | 'removed' | 'none'.
          */
-        function deselectPartsAtLatLng(latlng) {
-            if (!multiSelection || multiSelection.size === 0) return 0;
+        function togglePartAtLatLng(latlng) {
+            if (!currentGeoJSON || !currentGeoJSON.features || !map || !latlng) return 'none';
             const R = 13; // point hit radius in screen px (marker radius 9 + slack)
-            let nearestPointKey = null, nearestPointDist = Infinity;
-            let polyKey = null, polyArea = Infinity;
-            multiSelection.forEach(function(sel, key) {
-                const feature = bulkResolveFeatureById(sel.featureId);
-                const part = bulkGetPartGeometry(feature, sel.kind, sel.partIndex);
-                if (!part) return;
-                if (sel.kind === 'point') {
-                    const c = part.coordinates;
-                    if (!c || c.length < 2) return;
-                    const d = map.latLngToContainerPoint(L.latLng(latlng.lat, latlng.lng))
-                        .distanceTo(map.latLngToContainerPoint(L.latLng(c[1], c[0])));
-                    if (d <= R && d < nearestPointDist) { nearestPointDist = d; nearestPointKey = key; }
-                } else if (sel.kind === 'poly') {
-                    if (bulkPointOnPart(latlng, part)) {
-                        const a = bulkBBoxOfRing(part.coordinates[0]);
-                        const area = a ? (a[2] - a[0]) * (a[3] - a[1]) : Infinity;
-                        if (area < polyArea) { polyArea = area; polyKey = key; }
+            const click = map.latLngToContainerPoint(L.latLng(latlng.lat, latlng.lng));
+            let bestPoint = null, bestPoly = null;
+            currentGeoJSON.features.forEach(function(feature) {
+                if (!feature || !feature.geometry || typeof feature.__persistentId !== 'number') return;
+                const g = feature.geometry;
+                let parts = null;
+                if (g.type === 'Polygon') parts = [{ kind: 'poly', partIndex: 0 }];
+                else if (g.type === 'MultiPolygon') parts = (g.coordinates || []).map(function(_, i) { return { kind: 'poly', partIndex: i }; });
+                else if (g.type === 'Point') parts = [{ kind: 'point', partIndex: 0 }];
+                else if (g.type === 'MultiPoint') parts = (g.coordinates || []).map(function(_, i) { return { kind: 'point', partIndex: i }; });
+                if (!parts) return;
+                parts.forEach(function(part) {
+                    const partGeom = bulkGetPartGeometry(feature, part.kind, part.partIndex);
+                    if (!partGeom) return;
+                    const entry = { featureId: feature.__persistentId, kind: part.kind, partIndex: part.partIndex };
+                    if (part.kind === 'point') {
+                        const c = partGeom.coordinates;
+                        if (!c || c.length < 2) return;
+                        const d = click.distanceTo(map.latLngToContainerPoint(L.latLng(c[1], c[0])));
+                        if (d <= R && (!bestPoint || d < bestPoint.dist)) { entry.dist = d; bestPoint = entry; }
+                    } else if (part.kind === 'poly') {
+                        if (bulkPointOnPart(latlng, partGeom)) {
+                            const a = bulkBBoxOfRing(partGeom.coordinates[0]);
+                            const area = a ? (a[2] - a[0]) * (a[3] - a[1]) : Infinity;
+                            if (!bestPoly || area < bestPoly.area) { entry.area = area; bestPoly = entry; }
+                        }
                     }
-                }
+                });
             });
-            const removeKey = nearestPointKey || polyKey;
-            if (removeKey) { multiSelection.delete(removeKey); return 1; }
-            return 0;
+            const pick = bestPoint || bestPoly;
+            if (!pick) return 'none';
+            const key = bulkSelKey(pick.featureId, pick.kind, pick.partIndex);
+            if (multiSelection.has(key)) { multiSelection.delete(key); return 'removed'; }
+            multiSelection.set(key, { featureId: pick.featureId, kind: pick.kind, partIndex: pick.partIndex });
+            return 'added';
         }
 
         /**
