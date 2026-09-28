@@ -181,7 +181,7 @@
     "bulkCheck": "检查",
     "bulkExport": "导出",
     "bulkAutoClean": "自动清理",
-    "bulkClear": "清除",
+    "bulkClear": "取消选择",
     "bulkDeleteTitle": "删除所选要素？",
     "bulkDeleteConfirm": "这将从您的数据中删除 {0} 个所选项目。可使用 Ctrl/Cmd+Z 撤销。",
     "bulkDeleteBtn": "删除所选",

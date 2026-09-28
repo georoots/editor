@@ -196,7 +196,7 @@
     "bulkPropertiesFailed": "Hromadná aktualizace vlastností se nezdařila",
     "bulkPropsSplitInfo": "Částečně vybrané položky jsou rozděleny na samostatné objekty, takže jejich nevybrané části si zachovají původní vlastnosti.",
     "bulkNoSelection": "Nejsou vybrány žádné objekty. Podržte Ctrl/Cmd a tažením po mapě vyberte objekty.",
-    "lassoEmpty": "Uvnitř této výběrové oblasti nic není",
+    "lassoEmpty": "V této výběrové oblasti neleží celý žádný objekt",
     "lassoFailed": "Výběrovou oblast se nepodařilo zpracovat",
     "lassoHint": "Tip: Podržte Ctrl/Cmd a tažením po mapě vyberte více objektů a spusťte hromadné akce.",
     "exportSelectedBanner": "Exportuje se {0} vybraných objektů",
