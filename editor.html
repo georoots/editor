@@ -1145,6 +1145,99 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
             background-color: var(--primary-color);
         }
 
+        .crs-warning-content {
+            max-width: 560px;
+            text-align: left;
+        }
+
+        .crs-warning-content h2 {
+            color: var(--danger-color);
+        }
+
+        .crs-warning-list {
+            margin: 0 0 16px 20px;
+            color: var(--error-text);
+            font-size: 0.95em;
+            word-break: break-word;
+        }
+
+        .crs-warning-list li {
+            margin-bottom: 6px;
+        }
+
+        .crs-load-anyway {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 6px;
+            color: var(--text-color);
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .crs-warning-content .button-group {
+            flex-wrap: wrap;
+        }
+
+        .welcome-content > p.upload-hint {
+            font-size: 0.85rem;
+            margin: -5px 0 0;
+        }
+
+        /* Full-window drop target shown while files are dragged over the open map */
+        .map-drop-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 10003;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+            background: rgba(27, 67, 50, 0.45);
+            backdrop-filter: blur(2px);
+            pointer-events: none;
+        }
+
+        .map-drop-overlay.show {
+            display: flex;
+        }
+
+        .map-drop-panel {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            border: 4px dashed var(--white);
+            border-radius: 16px;
+            color: var(--white);
+            text-align: center;
+            text-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+        }
+
+        .map-drop-title {
+            font-size: 1.8rem;
+            font-weight: 700;
+        }
+
+        .map-drop-subtitle {
+            font-size: 1.05rem;
+            opacity: 0.9;
+            max-width: 560px;
+        }
+
+        .map-drop-overlay[data-state="unsupported"],
+        .map-drop-overlay[data-state="busy"] {
+            background: rgba(73, 80, 87, 0.55);
+        }
+
+        .map-drop-overlay[data-state="unsupported"] .map-drop-panel,
+        .map-drop-overlay[data-state="busy"] .map-drop-panel {
+            border-color: var(--danger-color);
+        }
+
         .hidden {
             display: none;
         }
@@ -2407,12 +2500,13 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                             <path d="M12,12L16,16H13.5V19H10.5V16H8L12,12Z"/>
                         </svg>
                     </div>
-                    <p data-i18n="uploadText">Drag & drop your GeoJSON file here</p>
+                    <p data-i18n="uploadText">Drag & drop your GeoJSON files here</p>
                     <p class="or-text" data-i18n="orText">or</p>
-                    <input type="file" id="fileInput" class="hidden" accept=".geojson,.json">
-                    <button id="fileSelectButton" class="upload-button" data-i18n="selectGeoJSONButton">Select GeoJSON File</button>
+                    <input type="file" id="fileInput" class="hidden" accept=".geojson,.json" multiple>
+                    <button id="fileSelectButton" class="upload-button" data-i18n="selectGeoJSONButton">Select GeoJSON Files</button>
                     <button id="startEmptyProjectButton" class="upload-button button-margin-top" data-i18n="startEmptyProject">Start Empty Project</button>
                 </div>
+                <p class="upload-hint" data-i18n="uploadMultipleHint">You can select several files at once to merge them into one dataset. Later, drop more files onto the map to add them to the open data.</p>
             </div>
 
         </div>
@@ -2433,6 +2527,32 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                 <a href="#" id="downloadInvalidFeatures" class="button" download="invalid_features.geojson" data-i18n="downloadInvalidButton">Download Invalid Features</a>
                 <button id="continueWithValid" class="button" data-i18n="continueWithValidButton">Continue</button>
             </div>
+        </div>
+    </div>
+
+    <!-- Wrong CRS Overlay (rows and remaining count are filled by showCrsWarningOverlay) -->
+    <div id="crsWarningOverlay" class="invalid-features-overlay" role="alertdialog" aria-modal="true" aria-labelledby="crsWarningTitle">
+        <div class="invalid-features-content crs-warning-content">
+            <h2 id="crsWarningTitle" data-i18n="crsWarningTitle">Incompatible Coordinate System</h2>
+            <p data-i18n="crsWarningMessage">Some data was exported using the wrong coordinate reference system (CRS). This tool cannot convert between coordinate systems, and such data is incompatible with the TRACES NT EUDR portal, which requires the RFC 7946 GeoJSON standard (WGS84 longitude/latitude), not the older 2008 GeoJSON specification.</p>
+            <ul id="crsWarningList" class="crs-warning-list"></ul>
+            <p id="crsWarningRemaining"></p>
+            <div class="button-group">
+                <a href="https://georoots.eu/reprojector" target="_blank" rel="noopener noreferrer" class="button" data-i18n="crsReprojectorLink">Fix with GeoRoots Reprojector</a>
+                <button id="crsWarningContinue" class="button">Continue</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Map File Drop Overlay (visual only; drag events are handled on window) -->
+    <div id="mapDropOverlay" class="map-drop-overlay" data-state="ready" aria-hidden="true">
+        <div class="map-drop-panel">
+            <svg width="64" height="64" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z"/>
+                <path d="M12,12L16,16H13.5V19H10.5V16H8L12,12Z"/>
+            </svg>
+            <p id="mapDropTitle" class="map-drop-title"></p>
+            <p id="mapDropSubtitle" class="map-drop-subtitle"></p>
         </div>
     </div>
 
@@ -2795,9 +2915,9 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
         "collaborationText": "made in collaboration with",
         "downloadText": "Download latest version and other tools on",
         "subtitle": "This is a visual GeoJSON editor for creating and editing geographic data.",
-        "uploadText": "Drag & drop your GeoJSON file here",
+        "uploadText": "Drag & drop your GeoJSON files here",
         "orText": "or",
-        "selectGeoJSONButton": "Select GeoJSON File",
+        "selectGeoJSONButton": "Select GeoJSON Files",
         "privacyText": "Your file and any of its content is only processed locally in your browser and none of your information is sent to GeoRoots, the map providers or anyone else.",
         "licenseText": "This software is free, released under GPLv3 open source license, see source code for full disclaimer.",
         "processingText": "Processing GeoJSON data...",
@@ -3020,7 +3140,28 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
         "shortcutShowHelp": "Show keyboard shortcuts",
         "shortcutFinishPolygonFirst": "Finish the polygon with a right-click first, or press P or Esc to cancel it.",
         "shortcutSnapOn": "Snap enabled",
-        "shortcutSnapOff": "Snap disabled"
+        "shortcutSnapOff": "Snap disabled",
+        "uploadMultipleHint": "You can select several files at once to merge them into one dataset. Later, drop more files onto the map to add them to the open data.",
+        "dropOverlayTitle": "Drop to add to the open dataset",
+        "dropOverlaySubtitle": "GeoJSON files (.geojson, .json) are checked and merged with the data on the map. You can undo this with Ctrl/Cmd+Z.",
+        "dropOverlayUnsupported": "Only GeoJSON files (.geojson, .json) can be added",
+        "dropOverlayBusy": "Finish or close the current action before adding files",
+        "crsWarningTitle": "Incompatible Coordinate System",
+        "crsWarningMessage": "Some data was exported using the wrong coordinate reference system (CRS). This tool cannot convert between coordinate systems, and such data is incompatible with the TRACES NT EUDR portal, which requires the RFC 7946 GeoJSON standard (WGS84 longitude/latitude), not the older 2008 GeoJSON specification.",
+        "crsWarningDeclared": "{0}: declares coordinate system {1}, so the whole file ({2} features) was skipped",
+        "crsWarningOutOfRange": "{0}: {1} of {2} features have coordinates outside the WGS84 range (or in latitude/longitude order). The whole file most likely uses the wrong CRS, so its other features may be misplaced.",
+        "crsLoadInRangeAnyway": "Load the other {0} feature(s) from this file anyway",
+        "crsWarningSplit": "{0}: mixes coordinate systems ({1} of {2} features use {3}). Files with per-feature CRS from the 2008 GeoJSON specification are not allowed by RFC 7946 or TRACES NT; only the WGS84 features can be loaded.",
+        "crsLoadCompatible": "Load only the {0} WGS84 feature(s) from this file",
+        "areaValuesConverted": "Converted the Area property from text to a number in {0} feature(s)",
+        "crsWarningRemaining": "The remaining {0} feature(s) can still be loaded.",
+        "crsWarningNothingLeft": "No features are left to load.",
+        "crsReprojectorLink": "Fix with GeoRoots Reprojector",
+        "filesSkippedUnsupported": "Skipped unsupported files: {0}. Only .geojson and .json files can be loaded.",
+        "fileNotGeoJSON": "Could not read as GeoJSON: {0}",
+        "noFeaturesLoaded": "No features could be loaded from the selected files.",
+        "featuresAdded": "Added {0} features from {1} file(s). Use Ctrl/Cmd+Z to undo.",
+        "filesMerged": "Merged {0} features from {1} files."
     }
     </script>
 
@@ -3031,9 +3172,9 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
         "collaborationText": "hecho en colaboración con",
         "downloadText": "Descarga la versión más reciente y otras herramientas en",
         "subtitle": "Este es un editor visual de GeoJSON para crear y editar datos geográficos.",
-        "uploadText": "Arrastra y suelta tu archivo GeoJSON aquí",
+        "uploadText": "Arrastra y suelta tus archivos GeoJSON aquí",
         "orText": "o",
-        "selectGeoJSONButton": "Seleccionar archivo GeoJSON",
+        "selectGeoJSONButton": "Seleccionar archivos GeoJSON",
         "privacyText": "Tu archivo y su contenido solo se procesan localmente en tu navegador y ninguna información se envía a GeoRoots, los proveedores de mapas ni a nadie más.",
         "licenseText": "Este software es gratuito, bajo licencia de código abierto GPLv3; consulta el código fuente para el descargo de responsabilidad completo.",
         "processingText": "Procesando datos GeoJSON...",
@@ -3257,7 +3398,28 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
         "shortcutShowHelp": "Mostrar atajos de teclado",
         "shortcutFinishPolygonFirst": "Primero termine el polígono con clic derecho, o pulse P o Esc para cancelarlo.",
         "shortcutSnapOn": "Ajuste activado",
-        "shortcutSnapOff": "Ajuste desactivado"
+        "shortcutSnapOff": "Ajuste desactivado",
+        "uploadMultipleHint": "Puede seleccionar varios archivos a la vez para combinarlos en un solo conjunto de datos. Más tarde, arrastre más archivos sobre el mapa para añadirlos a los datos abiertos.",
+        "dropOverlayTitle": "Suelte para añadir al conjunto de datos abierto",
+        "dropOverlaySubtitle": "Los archivos GeoJSON (.geojson, .json) se comprueban y se combinan con los datos del mapa. Puede deshacerlo con Ctrl/Cmd+Z.",
+        "dropOverlayUnsupported": "Solo se pueden añadir archivos GeoJSON (.geojson, .json)",
+        "dropOverlayBusy": "Termine o cierre la acción actual antes de añadir archivos",
+        "crsWarningTitle": "Sistema de coordenadas incompatible",
+        "crsWarningMessage": "Algunos datos se exportaron con un sistema de referencia de coordenadas (CRS) incorrecto. Esta herramienta no puede convertir entre sistemas de coordenadas, y estos datos son incompatibles con el portal EUDR de TRACES NT, que requiere el estándar GeoJSON RFC 7946 (longitud/latitud WGS84), no la antigua especificación GeoJSON de 2008.",
+        "crsWarningDeclared": "{0}: declara el sistema de coordenadas {1}, por lo que se omitió todo el archivo ({2} elementos)",
+        "crsWarningOutOfRange": "{0}: {1} de {2} elementos tienen coordenadas fuera del rango WGS84 (o en orden latitud/longitud). Lo más probable es que todo el archivo use un CRS incorrecto, por lo que sus demás elementos pueden estar mal ubicados.",
+        "crsLoadInRangeAnyway": "Cargar de todos modos los otros {0} elemento(s) de este archivo",
+        "crsWarningSplit": "{0}: mezcla sistemas de coordenadas ({1} de {2} elementos usan {3}). Los archivos con CRS por elemento de la especificación GeoJSON de 2008 no están permitidos por RFC 7946 ni por TRACES NT; solo se pueden cargar los elementos en WGS84.",
+        "crsLoadCompatible": "Cargar solo los {0} elemento(s) en WGS84 de este archivo",
+        "areaValuesConverted": "Se convirtió la propiedad Area de texto a número en {0} elemento(s)",
+        "crsWarningRemaining": "Los {0} elemento(s) restantes aún se pueden cargar.",
+        "crsWarningNothingLeft": "No quedan elementos para cargar.",
+        "crsReprojectorLink": "Corregir con GeoRoots Reprojector",
+        "filesSkippedUnsupported": "Archivos no compatibles omitidos: {0}. Solo se pueden cargar archivos .geojson y .json.",
+        "fileNotGeoJSON": "No se pudo leer como GeoJSON: {0}",
+        "noFeaturesLoaded": "No se pudo cargar ningún elemento de los archivos seleccionados.",
+        "featuresAdded": "Se añadieron {0} elementos de {1} archivo(s). Use Ctrl/Cmd+Z para deshacer.",
+        "filesMerged": "Se combinaron {0} elementos de {1} archivos."
     }
     </script>
 
@@ -3268,9 +3430,9 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
         "collaborationText": "réalisé en collaboration avec",
         "downloadText": "Téléchargez la dernière version et d'autres outils sur",
         "subtitle": "Ceci est un éditeur visuel GeoJSON pour créer et éditer des données géographiques.",
-        "uploadText": "Glissez-déposez votre fichier GeoJSON ici",
+        "uploadText": "Glissez-déposez vos fichiers GeoJSON ici",
         "orText": "ou",
-        "selectGeoJSONButton": "Sélectionner un fichier GeoJSON",
+        "selectGeoJSONButton": "Sélectionner des fichiers GeoJSON",
         "privacyText": "Votre fichier et son contenu ne sont traités que localement dans votre navigateur et aucune information n'est envoyée à GeoRoots, aux fournisseurs de cartes ou à quiconque.",
         "licenseText": "Ce logiciel est gratuit, publié sous licence open source GPLv3, voir le code source pour la clause de non-responsabilité complète.",
         "processingText": "Traitement des données GeoJSON...",
@@ -3494,7 +3656,28 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
         "shortcutShowHelp": "Afficher les raccourcis clavier",
         "shortcutFinishPolygonFirst": "Terminez d'abord le polygone par un clic droit, ou appuyez sur P ou Échap pour l'annuler.",
         "shortcutSnapOn": "Accrochage activé",
-        "shortcutSnapOff": "Accrochage désactivé"
+        "shortcutSnapOff": "Accrochage désactivé",
+        "uploadMultipleHint": "Vous pouvez sélectionner plusieurs fichiers à la fois pour les fusionner en un seul jeu de données. Ensuite, déposez d'autres fichiers sur la carte pour les ajouter aux données ouvertes.",
+        "dropOverlayTitle": "Déposez pour ajouter au jeu de données ouvert",
+        "dropOverlaySubtitle": "Les fichiers GeoJSON (.geojson, .json) sont vérifiés et fusionnés avec les données de la carte. Vous pouvez annuler avec Ctrl/Cmd+Z.",
+        "dropOverlayUnsupported": "Seuls les fichiers GeoJSON (.geojson, .json) peuvent être ajoutés",
+        "dropOverlayBusy": "Terminez ou fermez l'action en cours avant d'ajouter des fichiers",
+        "crsWarningTitle": "Système de coordonnées incompatible",
+        "crsWarningMessage": "Certaines données ont été exportées avec un mauvais système de référence de coordonnées (CRS). Cet outil ne peut pas convertir entre systèmes de coordonnées, et ces données sont incompatibles avec le portail EUDR TRACES NT, qui exige la norme GeoJSON RFC 7946 (longitude/latitude WGS84) et non l'ancienne spécification GeoJSON de 2008.",
+        "crsWarningDeclared": "{0} : déclare le système de coordonnées {1}, le fichier entier ({2} entités) a donc été ignoré",
+        "crsWarningOutOfRange": "{0} : {1} entités sur {2} ont des coordonnées hors de la plage WGS84 (ou dans l'ordre latitude/longitude). Le fichier entier utilise très probablement un mauvais CRS, ses autres entités peuvent donc être mal placées.",
+        "crsLoadInRangeAnyway": "Charger quand même les {0} autre(s) entité(s) de ce fichier",
+        "crsWarningSplit": "{0} : mélange plusieurs systèmes de coordonnées ({1} entités sur {2} utilisent {3}). Les fichiers avec un CRS par entité selon la spécification GeoJSON de 2008 ne sont pas autorisés par la RFC 7946 ni par TRACES NT ; seules les entités en WGS84 peuvent être chargées.",
+        "crsLoadCompatible": "Charger uniquement les {0} entité(s) en WGS84 de ce fichier",
+        "areaValuesConverted": "La propriété Area a été convertie de texte en nombre pour {0} entité(s)",
+        "crsWarningRemaining": "Les {0} entité(s) restante(s) peuvent encore être chargées.",
+        "crsWarningNothingLeft": "Il ne reste aucune entité à charger.",
+        "crsReprojectorLink": "Corriger avec GeoRoots Reprojector",
+        "filesSkippedUnsupported": "Fichiers non pris en charge ignorés : {0}. Seuls les fichiers .geojson et .json peuvent être chargés.",
+        "fileNotGeoJSON": "Lecture impossible en tant que GeoJSON : {0}",
+        "noFeaturesLoaded": "Aucune entité n'a pu être chargée depuis les fichiers sélectionnés.",
+        "featuresAdded": "{0} entités ajoutées depuis {1} fichier(s). Utilisez Ctrl/Cmd+Z pour annuler.",
+        "filesMerged": "{0} entités fusionnées depuis {1} fichiers."
     }
     </script>
     <script type="application/json" id="lang-cs">
@@ -3504,9 +3687,9 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
             "collaborationText": "vyvinuto ve spolupráci s",
             "downloadText": "Stáhněte nejnovější verzi a další nástroje na",
             "subtitle": "Toto je vizuální editor GeoJSON pro vytváření a úpravu geografických dat.",
-            "uploadText": "Přetáhněte sem svůj soubor GeoJSON",
+            "uploadText": "Přetáhněte sem své soubory GeoJSON",
             "orText": "nebo",
-            "selectGeoJSONButton": "Vybrat soubor GeoJSON",
+            "selectGeoJSONButton": "Vybrat soubory GeoJSON",
             "privacyText": "Váš soubor a jeho obsah jsou zpracovávány pouze lokálně ve vašem prohlížeči a žádné informace nejsou odesílány GeoRoots, poskytovatelům map ani nikomu jinému.",
             "licenseText": "Tento software je zdarma, vydaný pod open source licencí GPLv3, úplné prohlášení naleznete ve zdrojovém kódu.",
             "processingText": "Zpracování dat GeoJSON...",
@@ -3729,7 +3912,28 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
             "shortcutShowHelp": "Zobrazit klávesové zkratky",
             "shortcutFinishPolygonFirst": "Nejprve dokončete polygon pravým kliknutím, nebo jej zrušte klávesou P či Esc.",
             "shortcutSnapOn": "Přichytávání zapnuto",
-            "shortcutSnapOff": "Přichytávání vypnuto"
+            "shortcutSnapOff": "Přichytávání vypnuto",
+            "uploadMultipleHint": "Můžete vybrat více souborů najednou a sloučit je do jedné datové sady. Později můžete další soubory přetáhnout na mapu a přidat je k otevřeným datům.",
+            "dropOverlayTitle": "Pusťte pro přidání do otevřené datové sady",
+            "dropOverlaySubtitle": "Soubory GeoJSON (.geojson, .json) budou zkontrolovány a sloučeny s daty na mapě. Akci lze vrátit pomocí Ctrl/Cmd+Z.",
+            "dropOverlayUnsupported": "Přidat lze pouze soubory GeoJSON (.geojson, .json)",
+            "dropOverlayBusy": "Před přidáním souborů dokončete nebo zavřete aktuální akci",
+            "crsWarningTitle": "Nekompatibilní souřadnicový systém",
+            "crsWarningMessage": "Některá data byla exportována ve špatném souřadnicovém referenčním systému (CRS). Tento nástroj neumí převádět mezi souřadnicovými systémy a taková data nejsou kompatibilní s portálem TRACES NT EUDR, který vyžaduje standard GeoJSON RFC 7946 (zeměpisná délka/šířka WGS84), nikoli starší specifikaci GeoJSON z roku 2008.",
+            "crsWarningDeclared": "{0}: deklaruje souřadnicový systém {1}, proto byl přeskočen celý soubor (objektů: {2})",
+            "crsWarningOutOfRange": "{0}: {1} z {2} objektů má souřadnice mimo rozsah WGS84 (nebo v pořadí šířka/délka). Celý soubor nejspíše používá špatný CRS, takže i ostatní objekty mohou být posunuté.",
+            "crsLoadInRangeAnyway": "Přesto načíst ostatní objekty z tohoto souboru ({0})",
+            "crsWarningSplit": "{0}: kombinuje více souřadnicových systémů ({1} z {2} objektů používá {3}). Soubory s CRS u jednotlivých objektů podle specifikace GeoJSON z roku 2008 nejsou podle RFC 7946 ani TRACES NT povoleny; lze načíst pouze objekty ve WGS84.",
+            "crsLoadCompatible": "Načíst z tohoto souboru pouze objekty ve WGS84 ({0})",
+            "areaValuesConverted": "Vlastnost Area byla převedena z textu na číslo u objektů: {0}",
+            "crsWarningRemaining": "Zbývající objekty lze stále načíst: {0}.",
+            "crsWarningNothingLeft": "Nezbývají žádné objekty k načtení.",
+            "crsReprojectorLink": "Opravit pomocí GeoRoots Reprojector",
+            "filesSkippedUnsupported": "Přeskočeny nepodporované soubory: {0}. Načíst lze pouze soubory .geojson a .json.",
+            "fileNotGeoJSON": "Nelze načíst jako GeoJSON: {0}",
+            "noFeaturesLoaded": "Z vybraných souborů se nepodařilo načíst žádné objekty.",
+            "featuresAdded": "Přidáno objektů: {0} (souborů: {1}). Pro vrácení použijte Ctrl/Cmd+Z.",
+            "filesMerged": "Sloučeno objektů: {0} (souborů: {1})."
         }
     </script>
 
@@ -3740,9 +3944,9 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
         "collaborationText": "feito em colaboração com",
         "downloadText": "Baixe a versão mais recente e outras ferramentas em",
         "subtitle": "Este é um editor visual GeoJSON para criar e editar dados geográficos.",
-        "uploadText": "Arraste e solte seu arquivo GeoJSON aqui",
+        "uploadText": "Arraste e solte seus arquivos GeoJSON aqui",
         "orText": "ou",
-        "selectGeoJSONButton": "Selecionar arquivo GeoJSON",
+        "selectGeoJSONButton": "Selecionar arquivos GeoJSON",
         "privacyText": "Seu arquivo e qualquer conteúdo dele são processados apenas localmente no seu navegador e nenhuma informação é enviada ao GeoRoots, aos provedores de mapas ou a qualquer outra pessoa.",
         "licenseText": "Este software é gratuito, licenciado sob GPLv3 de código aberto; veja o código‑fonte para o aviso legal completo.",
         "processingText": "Processando dados GeoJSON...",
@@ -3966,7 +4170,28 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
         "shortcutShowHelp": "Mostrar atalhos de teclado",
         "shortcutFinishPolygonFirst": "Termine primeiro o polígono com um clique direito, ou pressione P ou Esc para cancelá-lo.",
         "shortcutSnapOn": "Aderência ativada",
-        "shortcutSnapOff": "Aderência desativada"
+        "shortcutSnapOff": "Aderência desativada",
+        "uploadMultipleHint": "Você pode selecionar vários arquivos de uma vez para mesclá-los em um único conjunto de dados. Depois, arraste mais arquivos para o mapa para adicioná-los aos dados abertos.",
+        "dropOverlayTitle": "Solte para adicionar ao conjunto de dados aberto",
+        "dropOverlaySubtitle": "Os arquivos GeoJSON (.geojson, .json) são verificados e mesclados com os dados do mapa. Você pode desfazer com Ctrl/Cmd+Z.",
+        "dropOverlayUnsupported": "Apenas arquivos GeoJSON (.geojson, .json) podem ser adicionados",
+        "dropOverlayBusy": "Conclua ou feche a ação atual antes de adicionar arquivos",
+        "crsWarningTitle": "Sistema de coordenadas incompatível",
+        "crsWarningMessage": "Alguns dados foram exportados com o sistema de referência de coordenadas (CRS) errado. Esta ferramenta não pode converter entre sistemas de coordenadas, e esses dados são incompatíveis com o portal EUDR do TRACES NT, que exige o padrão GeoJSON RFC 7946 (longitude/latitude WGS84), e não a antiga especificação GeoJSON de 2008.",
+        "crsWarningDeclared": "{0}: declara o sistema de coordenadas {1}, por isso o arquivo inteiro ({2} recursos) foi ignorado",
+        "crsWarningOutOfRange": "{0}: {1} de {2} recursos têm coordenadas fora do intervalo WGS84 (ou na ordem latitude/longitude). Provavelmente o arquivo inteiro usa o CRS errado, então os demais recursos podem estar mal posicionados.",
+        "crsLoadInRangeAnyway": "Carregar mesmo assim os outros {0} recurso(s) deste arquivo",
+        "crsWarningSplit": "{0}: mistura sistemas de coordenadas ({1} de {2} recursos usam {3}). Arquivos com CRS por recurso da especificação GeoJSON de 2008 não são permitidos pela RFC 7946 nem pelo TRACES NT; apenas os recursos em WGS84 podem ser carregados.",
+        "crsLoadCompatible": "Carregar apenas os {0} recurso(s) em WGS84 deste arquivo",
+        "areaValuesConverted": "A propriedade Area foi convertida de texto para número em {0} recurso(s)",
+        "crsWarningRemaining": "Os {0} recurso(s) restantes ainda podem ser carregados.",
+        "crsWarningNothingLeft": "Não há recursos restantes para carregar.",
+        "crsReprojectorLink": "Corrigir com o GeoRoots Reprojector",
+        "filesSkippedUnsupported": "Arquivos não suportados ignorados: {0}. Apenas arquivos .geojson e .json podem ser carregados.",
+        "fileNotGeoJSON": "Não foi possível ler como GeoJSON: {0}",
+        "noFeaturesLoaded": "Nenhum recurso pôde ser carregado dos arquivos selecionados.",
+        "featuresAdded": "{0} recursos adicionados de {1} arquivo(s). Use Ctrl/Cmd+Z para desfazer.",
+        "filesMerged": "{0} recursos mesclados de {1} arquivos."
     }
     </script>
 
@@ -3977,9 +4202,9 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
         "collaborationText": "imefanywa kwa ushirikiano na",
         "downloadText": "Pakua toleo la hivi karibuni na zana nyingine katika",
         "subtitle": "Hii ni mhariri wa GeoJSON wa kuona kwa kuunda na kuhariri data za kijiografia.",
-        "uploadText": "Buruta na udondoshe faili lako la GeoJSON hapa",
+        "uploadText": "Buruta na udondoshe faili zako za GeoJSON hapa",
         "orText": "au",
-        "selectGeoJSONButton": "Chagua Faili ya GeoJSON",
+        "selectGeoJSONButton": "Chagua Faili za GeoJSON",
         "privacyText": "Faili lako na maudhui yake yote yanachakatwa tu ndani ya kivinjari chako na hakuna taarifa zako zinazotumwa kwa GeoRoots, watoa ramani au mtu mwingine yeyote.",
         "licenseText": "Programu hii ni bure, chini ya leseni ya vyanzo wazi GPLv3; angalia msimbo chanzo kwa taarifa kamili.",
         "processingText": "Inachakata data ya GeoJSON...",
@@ -4203,7 +4428,28 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
         "shortcutShowHelp": "Onyesha njia za mkato za kibodi",
         "shortcutFinishPolygonFirst": "Kwanza maliza poligoni kwa kubofya kulia, au bonyeza P au Esc ili kuighairi.",
         "shortcutSnapOn": "Kunasa kumewashwa",
-        "shortcutSnapOff": "Kunasa kumezimwa"
+        "shortcutSnapOff": "Kunasa kumezimwa",
+        "uploadMultipleHint": "Unaweza kuchagua faili kadhaa kwa wakati mmoja ili kuziunganisha kuwa seti moja ya data. Baadaye, buruta faili zaidi kwenye ramani ili kuziongeza kwenye data iliyofunguliwa.",
+        "dropOverlayTitle": "Achia ili kuongeza kwenye seti ya data iliyofunguliwa",
+        "dropOverlaySubtitle": "Faili za GeoJSON (.geojson, .json) hukaguliwa na kuunganishwa na data iliyo kwenye ramani. Unaweza kutendua kwa Ctrl/Cmd+Z.",
+        "dropOverlayUnsupported": "Faili za GeoJSON (.geojson, .json) pekee ndizo zinaweza kuongezwa",
+        "dropOverlayBusy": "Maliza au funga kitendo kinachoendelea kabla ya kuongeza faili",
+        "crsWarningTitle": "Mfumo wa Kuratibu Usiooana",
+        "crsWarningMessage": "Baadhi ya data ilihamishwa kwa kutumia mfumo usio sahihi wa marejeleo ya kuratibu (CRS). Zana hii haiwezi kubadilisha kati ya mifumo ya kuratibu, na data kama hiyo haioani na lango la TRACES NT EUDR, linalohitaji kiwango cha GeoJSON RFC 7946 (longitudo/latitudo ya WGS84), si vipimo vya zamani vya GeoJSON vya 2008.",
+        "crsWarningDeclared": "{0}: inatangaza mfumo wa kuratibu {1}, kwa hivyo faili nzima (vipengele {2}) imerukwa",
+        "crsWarningOutOfRange": "{0}: vipengele {1} kati ya {2} vina kuratibu nje ya kiwango cha WGS84 (au kwa mpangilio wa latitudo/longitudo). Huenda faili nzima inatumia CRS isiyo sahihi, kwa hivyo vipengele vyake vingine vinaweza kuwa mahali pasipo sahihi.",
+        "crsLoadInRangeAnyway": "Pakia vipengele vingine {0} vya faili hii hata hivyo",
+        "crsWarningSplit": "{0}: inachanganya mifumo ya kuratibu ({1} kati ya vipengele {2} vinatumia {3}). Faili zenye CRS kwa kila kipengele kulingana na vipimo vya GeoJSON vya 2008 haziruhusiwi na RFC 7946 wala TRACES NT; vipengele vya WGS84 pekee vinaweza kupakiwa.",
+        "crsLoadCompatible": "Pakia vipengele {0} vya WGS84 pekee kutoka faili hii",
+        "areaValuesConverted": "Sifa ya Area imebadilishwa kutoka maandishi kuwa nambari katika vipengele {0}",
+        "crsWarningRemaining": "Vipengele {0} vilivyobaki bado vinaweza kupakiwa.",
+        "crsWarningNothingLeft": "Hakuna vipengele vilivyobaki vya kupakia.",
+        "crsReprojectorLink": "Rekebisha kwa GeoRoots Reprojector",
+        "filesSkippedUnsupported": "Faili zisizotumika zimerukwa: {0}. Faili za .geojson na .json pekee ndizo zinaweza kupakiwa.",
+        "fileNotGeoJSON": "Haikuweza kusomwa kama GeoJSON: {0}",
+        "noFeaturesLoaded": "Hakuna kipengele kilichoweza kupakiwa kutoka kwa faili zilizochaguliwa.",
+        "featuresAdded": "Vipengele {0} vimeongezwa kutoka faili {1}. Tumia Ctrl/Cmd+Z kutendua.",
+        "filesMerged": "Vipengele {0} vimeunganishwa kutoka faili {1}."
     }
     </script>
 
@@ -4214,9 +4460,9 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
         "collaborationText": "与以下机构合作开发",
         "downloadText": "在此下载最新版本及其它工具",
         "subtitle": "这是一个用于创建和编辑地理数据的可视化 GeoJSON 编辑器。",
-        "uploadText": "将您的 GeoJSON 文件拖放到此处",
+        "uploadText": "将您的 GeoJSON 文件拖放到此处（可多选）",
         "orText": "或",
-        "selectGeoJSONButton": "选择 GeoJSON 文件",
+        "selectGeoJSONButton": "选择 GeoJSON 文件（可多选）",
         "privacyText": "您的文件及其内容仅在您的浏览器中本地处理，您的信息不会发送给 GeoRoots、地图提供商或任何其他人。",
         "licenseText": "本软件免费，采用 GPLv3 开源许可，详见源代码免责声明。",
         "processingText": "正在处理 GeoJSON 数据...",
@@ -4440,7 +4686,28 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
         "shortcutShowHelp": "显示键盘快捷键",
         "shortcutFinishPolygonFirst": "请先右键单击完成多边形，或按 P 或 Esc 取消。",
         "shortcutSnapOn": "捕捉已开启",
-        "shortcutSnapOff": "捕捉已关闭"
+        "shortcutSnapOff": "捕捉已关闭",
+        "uploadMultipleHint": "您可以一次选择多个文件，将它们合并为一个数据集。之后，还可以将更多文件拖放到地图上，添加到已打开的数据中。",
+        "dropOverlayTitle": "松开以添加到当前数据集",
+        "dropOverlaySubtitle": "GeoJSON 文件（.geojson、.json）将经过检查并与地图上的数据合并。可使用 Ctrl/Cmd+Z 撤销。",
+        "dropOverlayUnsupported": "只能添加 GeoJSON 文件（.geojson、.json）",
+        "dropOverlayBusy": "请先完成或关闭当前操作，再添加文件",
+        "crsWarningTitle": "坐标系不兼容",
+        "crsWarningMessage": "部分数据使用了错误的坐标参考系（CRS）导出。本工具无法在坐标系之间进行转换，此类数据与 TRACES NT EUDR 门户不兼容。该门户要求使用 RFC 7946 GeoJSON 标准（WGS84 经度/纬度），而不是旧的 2008 GeoJSON 规范。",
+        "crsWarningDeclared": "{0}：声明了坐标系 {1}，因此已跳过整个文件（{2} 个要素）",
+        "crsWarningOutOfRange": "{0}：{2} 个要素中有 {1} 个的坐标超出 WGS84 范围（或为纬度/经度顺序）。整个文件很可能使用了错误的 CRS，其余要素的位置也可能不准确。",
+        "crsLoadInRangeAnyway": "仍然加载此文件中的其余 {0} 个要素",
+        "crsWarningSplit": "{0}：混用了多个坐标系（{2} 个要素中有 {1} 个使用 {3}）。RFC 7946 和 TRACES NT 均不允许 2008 版 GeoJSON 规范中按要素指定 CRS 的文件；只能加载 WGS84 要素。",
+        "crsLoadCompatible": "仅加载此文件中的 {0} 个 WGS84 要素",
+        "areaValuesConverted": "已将 {0} 个要素的 Area 属性从文本转换为数字",
+        "crsWarningRemaining": "其余 {0} 个要素仍可加载。",
+        "crsWarningNothingLeft": "没有可加载的要素。",
+        "crsReprojectorLink": "使用 GeoRoots Reprojector 修复",
+        "filesSkippedUnsupported": "已跳过不支持的文件：{0}。仅可加载 .geojson 和 .json 文件。",
+        "fileNotGeoJSON": "无法作为 GeoJSON 读取：{0}",
+        "noFeaturesLoaded": "无法从所选文件中加载任何要素。",
+        "featuresAdded": "已从 {1} 个文件中添加 {0} 个要素。使用 Ctrl/Cmd+Z 撤销。",
+        "filesMerged": "已从 {1} 个文件中合并 {0} 个要素。"
     }
     </script>
 
@@ -4451,9 +4718,9 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
         "collaborationText": "พัฒนาร่วมกับ",
         "downloadText": "ดาวน์โหลดเวอร์ชันล่าสุดและเครื่องมืออื่น ๆ ได้ที่",
         "subtitle": "นี่คือโปรแกรมแก้ไข GeoJSON แบบภาพสำหรับสร้างและแก้ไขข้อมูลทางภูมิศาสตร์",
-        "uploadText": "ลากและวางไฟล์ GeoJSON ของคุณที่นี่",
+        "uploadText": "ลากและวางไฟล์ GeoJSON ของคุณที่นี่ (หลายไฟล์)",
         "orText": "หรือ",
-        "selectGeoJSONButton": "เลือกไฟล์ GeoJSON",
+        "selectGeoJSONButton": "เลือกไฟล์ GeoJSON (หลายไฟล์)",
         "privacyText": "ไฟล์ของคุณและเนื้อหาทั้งหมดจะถูกประมวลผลเฉพาะในเบราว์เซอร์ของคุณเท่านั้น และจะไม่มีข้อมูลใด ๆ ของคุณถูกส่งไปยัง GeoRoots ผู้ให้บริการแผนที่ หรือบุคคลอื่น",
         "licenseText": "ซอฟต์แวร์นี้ฟรี ภายใต้สัญญาอนุญาตโค้ดเปิด GPLv3 ดูซอร์สโค้ดสำหรับข้อจำกัดความรับผิดฉบับเต็ม",
         "processingText": "กำลังประมวลผลข้อมูล GeoJSON...",
@@ -4677,7 +4944,28 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
         "shortcutShowHelp": "แสดงแป้นพิมพ์ลัด",
         "shortcutFinishPolygonFirst": "กรุณาคลิกขวาเพื่อวาดรูปหลายเหลี่ยมให้เสร็จก่อน หรือกด P หรือ Esc เพื่อยกเลิก",
         "shortcutSnapOn": "เปิดการสแนปแล้ว",
-        "shortcutSnapOff": "ปิดการสแนปแล้ว"
+        "shortcutSnapOff": "ปิดการสแนปแล้ว",
+        "uploadMultipleHint": "คุณสามารถเลือกหลายไฟล์พร้อมกันเพื่อรวมเป็นชุดข้อมูลเดียว จากนั้นสามารถลากไฟล์เพิ่มเติมมาวางบนแผนที่เพื่อเพิ่มลงในข้อมูลที่เปิดอยู่",
+        "dropOverlayTitle": "วางเพื่อเพิ่มลงในชุดข้อมูลที่เปิดอยู่",
+        "dropOverlaySubtitle": "ไฟล์ GeoJSON (.geojson, .json) จะถูกตรวจสอบและรวมกับข้อมูลบนแผนที่ คุณสามารถเลิกทำได้ด้วย Ctrl/Cmd+Z",
+        "dropOverlayUnsupported": "เพิ่มได้เฉพาะไฟล์ GeoJSON (.geojson, .json) เท่านั้น",
+        "dropOverlayBusy": "โปรดทำให้เสร็จหรือปิดการทำงานปัจจุบันก่อนเพิ่มไฟล์",
+        "crsWarningTitle": "ระบบพิกัดไม่เข้ากัน",
+        "crsWarningMessage": "ข้อมูลบางส่วนถูกส่งออกโดยใช้ระบบพิกัดอ้างอิง (CRS) ที่ไม่ถูกต้อง เครื่องมือนี้ไม่สามารถแปลงระหว่างระบบพิกัดได้ และข้อมูลดังกล่าวไม่เข้ากันกับพอร์ทัล TRACES NT EUDR ซึ่งกำหนดให้ใช้มาตรฐาน GeoJSON RFC 7946 (ลองจิจูด/ละติจูด WGS84) ไม่ใช่ข้อกำหนด GeoJSON เดิมปี 2008",
+        "crsWarningDeclared": "{0}: ระบุระบบพิกัด {1} จึงข้ามทั้งไฟล์ ({2} ฟีเจอร์)",
+        "crsWarningOutOfRange": "{0}: {1} จาก {2} ฟีเจอร์มีพิกัดอยู่นอกช่วง WGS84 (หรืออยู่ในลำดับละติจูด/ลองจิจูด) ทั้งไฟล์น่าจะใช้ CRS ที่ไม่ถูกต้อง ฟีเจอร์อื่นในไฟล์จึงอาจอยู่ผิดตำแหน่ง",
+        "crsLoadInRangeAnyway": "โหลดฟีเจอร์อื่นอีก {0} รายการจากไฟล์นี้ต่อไป",
+        "crsWarningSplit": "{0}: ใช้ระบบพิกัดปะปนกัน ({1} จาก {2} ฟีเจอร์ใช้ {3}) ไฟล์ที่กำหนด CRS แยกตามฟีเจอร์ตามข้อกำหนด GeoJSON ปี 2008 ไม่ได้รับอนุญาตตาม RFC 7946 และ TRACES NT จึงโหลดได้เฉพาะฟีเจอร์ที่เป็น WGS84 เท่านั้น",
+        "crsLoadCompatible": "โหลดเฉพาะฟีเจอร์ WGS84 จำนวน {0} รายการจากไฟล์นี้",
+        "areaValuesConverted": "แปลงคุณสมบัติ Area จากข้อความเป็นตัวเลขแล้วใน {0} ฟีเจอร์",
+        "crsWarningRemaining": "ยังสามารถโหลดฟีเจอร์ที่เหลืออีก {0} รายการได้",
+        "crsWarningNothingLeft": "ไม่มีฟีเจอร์เหลือให้โหลด",
+        "crsReprojectorLink": "แก้ไขด้วย GeoRoots Reprojector",
+        "filesSkippedUnsupported": "ข้ามไฟล์ที่ไม่รองรับ: {0} โหลดได้เฉพาะไฟล์ .geojson และ .json",
+        "fileNotGeoJSON": "ไม่สามารถอ่านเป็น GeoJSON ได้: {0}",
+        "noFeaturesLoaded": "ไม่สามารถโหลดฟีเจอร์ใดจากไฟล์ที่เลือกได้",
+        "featuresAdded": "เพิ่ม {0} ฟีเจอร์จาก {1} ไฟล์แล้ว ใช้ Ctrl/Cmd+Z เพื่อเลิกทำ",
+        "filesMerged": "รวม {0} ฟีเจอร์จาก {1} ไฟล์แล้ว"
     }
     </script>
 
@@ -4688,9 +4976,9 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
         "collaborationText": "በትብብር የተሰራ ከ",
         "downloadText": "የቅርብ ስሪትን እና ሌሎች መሳሪያዎችን ያውርዱ",
         "subtitle": "ይህ የGeoJSON አርታዒ ነው ለጂኦግራፊያዊ ዳታ መፍጠር እና ማስተካከል።",
-        "uploadText": "የGeoJSON ፋይልዎን እዚህ ይጎትቱ እና ይጨምሩ",
+        "uploadText": "የGeoJSON ፋይሎችዎን እዚህ ይጎትቱ እና ይጨምሩ",
         "orText": "ወይም",
-        "selectGeoJSONButton": "GeoJSON ፋይል ይምረጡ",
+        "selectGeoJSONButton": "GeoJSON ፋይሎች ይምረጡ",
         "privacyText": "ፋይሉ እና ውሂቡ በአንተ አሳሽ ብቻ ይሰራል፣ መረጃዎ ወደ GeoRoots ወይም ማንኛውም ሰው አይላከውም።",
         "licenseText": "ይህ ሶፍትዌር ነፃ ነው፣ በ GPLv3 ክፍት ምንጭ ፈቃድ የተሰጠ፣ ሙሉ ማስተናገድ ለማየት የምንጭ ኮድን ይመልከቱ።",
         "processingText": "GeoJSON ዳታን በማስተናገድ ላይ...",
@@ -4914,7 +5202,28 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
         "shortcutShowHelp": "የቁልፍ ሰሌዳ አቋራጮችን አሳይ",
         "shortcutFinishPolygonFirst": "መጀመሪያ ፖሊጎኑን በቀኝ ጠቅታ ያጠናቅቁ፣ ወይም ለመሰረዝ P ወይም Esc ይጫኑ።",
         "shortcutSnapOn": "ማጣበቅ በርቷል",
-        "shortcutSnapOff": "ማጣበቅ ጠፍቷል"
+        "shortcutSnapOff": "ማጣበቅ ጠፍቷል",
+        "uploadMultipleHint": "ብዙ ፋይሎችን በአንድ ጊዜ መርጠው ወደ አንድ የውሂብ ስብስብ ማዋሃድ ይችላሉ። በኋላ ላይ ተጨማሪ ፋይሎችን ወደ ካርታው በመጎተት ወደ ክፍት ውሂቡ ማከል ይችላሉ።",
+        "dropOverlayTitle": "ወደ ክፍት የውሂብ ስብስብ ለማከል እዚህ ይልቀቁ",
+        "dropOverlaySubtitle": "የGeoJSON ፋይሎች (.geojson, .json) ተፈትሸው በካርታው ላይ ካለው ውሂብ ጋር ይዋሃዳሉ። በCtrl/Cmd+Z መቀልበስ ይችላሉ።",
+        "dropOverlayUnsupported": "ሊታከሉ የሚችሉት የGeoJSON ፋይሎች (.geojson, .json) ብቻ ናቸው",
+        "dropOverlayBusy": "ፋይሎችን ከማከልዎ በፊት የአሁኑን እርምጃ ያጠናቅቁ ወይም ይዝጉ",
+        "crsWarningTitle": "ተኳሃኝ ያልሆነ የመጋጠሚያ ሥርዓት",
+        "crsWarningMessage": "አንዳንድ ውሂብ የተሳሳተ የመጋጠሚያ ማጣቀሻ ሥርዓት (CRS) በመጠቀም ተልኳል። ይህ መሣሪያ በመጋጠሚያ ሥርዓቶች መካከል መቀየር አይችልም፣ እና እንዲህ ያለው ውሂብ ከTRACES NT EUDR ፖርታል ጋር ተኳሃኝ አይደለም፤ ፖርታሉ የቆየውን የ2008 GeoJSON መግለጫ ሳይሆን የRFC 7946 GeoJSON ደረጃን (WGS84 ኬንትሮስ/ኬክሮስ) ይፈልጋል።",
+        "crsWarningDeclared": "{0}: የመጋጠሚያ ሥርዓት {1} ያውጃል፣ ስለዚህ ሙሉው ፋይል ({2} ባህሪያት) ተዘልሏል",
+        "crsWarningOutOfRange": "{0}: ከ{2} ባህሪያት ውስጥ {1} ከWGS84 ክልል ውጭ (ወይም በኬክሮስ/ኬንትሮስ ቅደም ተከተል) መጋጠሚያ አላቸው። ሙሉው ፋይል የተሳሳተ CRS ሳይጠቀም አይቀርም፣ ስለዚህ ሌሎቹ ባህሪያቱም በተሳሳተ ቦታ ሊሆኑ ይችላሉ።",
+        "crsLoadInRangeAnyway": "የዚህን ፋይል ሌሎች {0} ባህሪያት ለማንኛውም ጫን",
+        "crsWarningSplit": "{0}: የተለያዩ የመጋጠሚያ ስርዓቶችን ይቀላቅላል (ከ{2} ባህሪያት {1}ዱ {3} ይጠቀማሉ)። በ2008 GeoJSON መግለጫ መሰረት ለእያንዳንዱ ባህሪ CRS የሚገልጹ ፋይሎች በRFC 7946 እና በTRACES NT አይፈቀዱም፤ የWGS84 ባህሪያት ብቻ ሊጫኑ ይችላሉ።",
+        "crsLoadCompatible": "ከዚህ ፋይል {0} የWGS84 ባህሪያትን ብቻ ጫን",
+        "areaValuesConverted": "በ{0} ባህሪያት ውስጥ የArea ንብረት ከጽሑፍ ወደ ቁጥር ተቀይሯል",
+        "crsWarningRemaining": "የቀሩት {0} ባህሪያት አሁንም ሊጫኑ ይችላሉ።",
+        "crsWarningNothingLeft": "የሚጫኑ ባህሪያት አልቀሩም።",
+        "crsReprojectorLink": "በGeoRoots Reprojector ያስተካክሉ",
+        "filesSkippedUnsupported": "የማይደገፉ ፋይሎች ተዘለዋል፦ {0}። ሊጫኑ የሚችሉት .geojson እና .json ፋይሎች ብቻ ናቸው።",
+        "fileNotGeoJSON": "እንደ GeoJSON ማንበብ አልተቻለም፦ {0}",
+        "noFeaturesLoaded": "ከተመረጡት ፋይሎች ምንም ባህሪ መጫን አልተቻለም።",
+        "featuresAdded": "ከ{1} ፋይል(ሎች) {0} ባህሪያት ታክለዋል። ለመቀልበስ Ctrl/Cmd+Z ይጠቀሙ።",
+        "filesMerged": "ከ{1} ፋይሎች {0} ባህሪያት ተዋህደዋል።"
     }
     </script>
 
@@ -5280,19 +5589,17 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
             const fileInput = document.getElementById('fileInput');
             const fileSelectButton = document.getElementById('fileSelectButton');
             const startEmptyProjectButton = document.getElementById('startEmptyProjectButton');
-            const welcomeOverlay = document.getElementById('welcomeOverlay');
-            const loadingOverlay = document.getElementById('loadingOverlay');
 
             // File select button click
             fileSelectButton.addEventListener('click', function() {
                 fileInput.click();
             });
 
-            // File input change event
             fileInput.addEventListener('change', function() {
-                if (this.files.length > 0) {
-                    handleFile(this.files[0]);
-                }
+                const files = Array.from(this.files);
+                // Reset so that picking the same file(s) again still fires 'change'
+                this.value = '';
+                importGeoJSONFiles(files);
             });
 
             // Drag and drop events
@@ -5321,123 +5628,11 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                 dropArea.classList.remove('is-active');
             }
 
-            // Handle dropped file
             dropArea.addEventListener('drop', function(e) {
-                const dt = e.dataTransfer;
-                const files = dt.files;
-                
-                if (files.length > 0) {
-                    handleFile(files[0]);
-                }
+                importGeoJSONFiles(e.dataTransfer.files);
             });
 
-
-            // Handle the uploaded file
-            function handleFile(file) {
-                // Clear undo/redo stacks when loading new file
-                __undoStack = [];
-                __redoStack = [];
-                
-                // Store original filename (without extension)
-                if (file && file.name) {
-                    originalFilename = file.name.replace(/\.(geojson|json)$/i, '');
-                }
-                
-                // Show loading overlay
-                hideWelcomeOverlay();
-                loadingOverlay.style.display = 'flex';
-                // Initialize the map if not already done
-                if (!map) {
-                    initializeMap();
-                }
-
-                // Read the file
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    try {
-                        const geoJSON = JSON.parse(e.target.result);
-                        
-                        // Check if Turf.js is loaded
-                        if (typeof turf === 'undefined' || typeof turf.booleanValid !== 'function') {
-                            console.error('Turf.js library is not loaded or booleanValid is not available');
-                            showErrorNotification(getText('turfLoadFailed'), 'amber');
-                            
-                            // Process without validation
-                        processGeoJSON(geoJSON);
-                            loadingOverlay.style.display = 'none';
-                            return;
-                        }
-                        
-                        // Validate and clean the feature set
-                        console.log('Validating and cleaning feature set...');
-                        const { validFeatures, invalidFeatures } = validateFeatureSet(geoJSON);
-                        
-                        console.log(`Validation complete. Valid: ${validFeatures.length}, Invalid: ${invalidFeatures.length}`);
-                        
-                        // If there are invalid features, show the overlay
-                        if (invalidFeatures.length > 0) {
-                            loadingOverlay.style.display = 'none';
-                            showInvalidFeaturesOverlay(invalidFeatures, validFeatures, geoJSON);
-                        } else {
-                            // Clean and truncate valid features to 8 decimals
-                            const { cleanGeoJSON } = cleanFeatureSet(validFeatures);
-                            
-                            // Process GeoJSON data
-                            processGeoJSON(cleanGeoJSON);
-                        // Hide loading overlay
-                        loadingOverlay.style.display = 'none';
-                        }
-                    } catch (error) {
-                        showErrorNotification(getText('errorProcessingGeoJSON', error.message || error), 'red');
-                        alert(getText('invalidGeoJSON'));
-                        
-                        // Show welcome overlay again on error
-                        showWelcomeOverlay();
-                        loadingOverlay.style.display = 'none';
-                    }
-                };
-                reader.readAsText(file);
-            }
-
-            // Show invalid features overlay
-            function showInvalidFeaturesOverlay(invalidFeatures, validFeatures, originalGeoJSON) {
-                const overlay = document.getElementById('invalidFeaturesOverlay');
-                const messageElement = document.getElementById('invalidFeaturesMessage');
-                const downloadButton = document.getElementById('downloadInvalidFeatures');
-                const continueButton = document.getElementById('continueWithValid');
-                
-                // Update message with count
-                const message = getText('invalidFeaturesMessage').replace('{count}', invalidFeatures.length);
-                messageElement.textContent = message;
-                
-                // Create download blob for invalid features
-                const invalidGeoJSON = {
-                    type: 'FeatureCollection',
-                    features: invalidFeatures
-                };
-                const blob = new Blob([JSON.stringify(invalidGeoJSON, null, 2)], { type: 'application/json' });
-                const url = URL.createObjectURL(blob);
-                downloadButton.href = url;
-                
-                // Handle continue button
-                continueButton.onclick = function() {
-                    overlay.style.display = 'none';
-                    URL.revokeObjectURL(url);
-                    
-                    // Clean and truncate valid features to 8 decimals
-                    const { cleanGeoJSON, invalidFeatures: additionalInvalid } = cleanFeatureSet(validFeatures);
-                    
-                    if (additionalInvalid.length > 0) {
-                        console.warn(`${additionalInvalid.length} additional features were filtered out during final cleaning`);
-                    }
-                    
-                    // Process clean GeoJSON
-                    processGeoJSON(cleanGeoJSON);
-                };
-                
-                // Show the overlay
-                overlay.style.display = 'flex';
-            }
+            initializeMapFileDrop();
 
             // Start empty project: reveal map with no features
             startEmptyProjectButton.addEventListener('click', function(){
@@ -5451,6 +5646,344 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
                 } catch (err) { console.warn('Start empty project failed', err); }
             });
         }
+
+        // ============================================================================
+        // GEOJSON IMPORT PIPELINE (multi-file load, merge and drop-to-append)
+        // ============================================================================
+
+        const GEOJSON_GEOMETRY_TYPES = new Set(['Point', 'MultiPoint', 'LineString', 'MultiLineString', 'Polygon', 'MultiPolygon', 'GeometryCollection']);
+        // GeoJSON 2008 "crs" identifiers that still mean WGS84 degrees: CRS84 and EPSG:4326/4979 in urn, url or plain form
+        const WGS84_CRS_PATTERN = /^wgs\s*-?\s*84$|crs:?84|(^|\D)(4326|4979)(\D|$)/i;
+        let __importInProgress = false;
+
+        function isGeoJSONFileName(name) {
+            return /\.(geo)?json$/i.test(name || '');
+        }
+
+        function stripGeoJSONExtension(name) {
+            return String(name || '').replace(/\.(geo)?json$/i, '');
+        }
+
+        /** Features of any GeoJSON root object, or null when the JSON is not GeoJSON at all */
+        function featuresFromGeoJSON(json) {
+            if (!json || typeof json !== 'object') return null;
+            if (json.type === 'Feature') return [json];
+            if (GEOJSON_GEOMETRY_TYPES.has(json.type)) return [{ type: 'Feature', properties: {}, geometry: json }];
+            if (Array.isArray(json) || (json.type === 'FeatureCollection' && Array.isArray(json.features))) return extractFeatures(json);
+            return null;
+        }
+
+        /** Identifier of an object's GeoJSON 2008 "crs" member; null when absent or unidentifiable */
+        function getCrsId(obj) {
+            const crs = obj && typeof obj === 'object' ? obj.crs : null;
+            if (!crs || typeof crs !== 'object') return null;
+            const props = crs.properties || {};
+            const id = String(props.name ?? props.code ?? props.href ?? '').trim();
+            return id ? id.slice(0, 120) : null;
+        }
+
+        function isWgs84Crs(id) {
+            return !id || WGS84_CRS_PATTERN.test(id);
+        }
+
+        function hasWgs84Coordinates(geometry) {
+            return getAllCoordinatesFromGeometry(geometry).every(c => Math.abs(c[0]) <= 180 && Math.abs(c[1]) <= 90);
+        }
+
+        function hasCrsIssue(report) {
+            return report.foreignCount > 0 || report.outOfRange > 0;
+        }
+
+        /** Files with any CRS doubt load only their WGS84 in-range features, and only with the user's consent */
+        function isFileAccepted(report) {
+            return !hasCrsIssue(report) || report.loadAnyway === true;
+        }
+
+        // EUDR requires "Area" (hectares) to be a number; accept "3", " 3.5 " and a decimal comma "3,5"
+        const NUMERIC_TEXT_PATTERN = /^[+-]?(\d+([.,]\d+)?|[.,]\d+)$/;
+        // "1,500" may be a thousands separator or a decimal comma, so it is left for the user to fix
+        const AMBIGUOUS_COMMA_PATTERN = /^[+-]?[1-9]\d{0,2},\d{3}$/;
+
+        /** Converts a numeric-text "Area" property in place; returns true when a value was converted */
+        function normalizeAreaProperty(properties) {
+            if (!properties || typeof properties !== 'object') return false;
+            const key = Object.keys(properties).find(k => k.toLowerCase() === 'area');
+            const text = key && typeof properties[key] === 'string' ? properties[key].trim() : '';
+            if (!NUMERIC_TEXT_PATTERN.test(text) || AMBIGUOUS_COMMA_PATTERN.test(text)) return false;
+            properties[key] = Number(text.replace(',', '.'));
+            return true;
+        }
+
+        /**
+         * Split one parsed file into loadable, fatally invalid, foreign-CRS and out-of-range features.
+         * 2008-spec "crs" members inherit downwards (geometry overrides feature overrides root),
+         * so a split-CRS file can still contain features that are genuinely WGS84.
+         */
+        function analyzeGeoJSONFile(name, json) {
+            const features = featuresFromGeoJSON(json);
+            if (!features) return { name, unreadable: true };
+            const report = { name, total: features.length, valid: [], invalid: [], foreignCrs: null, foreignCount: 0, outOfRange: 0, areaConverted: 0, loadAnyway: false };
+            const rootCrs = getCrsId(json);
+            for (const feature of features) {
+                const crs = getCrsId(feature && feature.geometry) || getCrsId(feature) || rootCrs;
+                if (!isWgs84Crs(crs)) {
+                    report.foreignCrs = report.foreignCrs || crs;
+                    report.foreignCount++;
+                } else if (hasFatalGeometryIssue(feature)) {
+                    report.invalid.push(feature);
+                } else if (!hasWgs84Coordinates(feature.geometry)) {
+                    report.outOfRange++;
+                } else {
+                    // Internal ids are re-assigned after merging; a WGS84 "crs" member is not allowed by RFC 7946
+                    delete feature.__persistentId;
+                    delete feature.__featureIndex;
+                    delete feature.crs;
+                    delete feature.geometry.crs;
+                    if (normalizeAreaProperty(feature.properties)) report.areaConverted++;
+                    report.valid.push(feature);
+                }
+            }
+            return report;
+        }
+
+        async function readGeoJSONFile(file) {
+            try {
+                return analyzeGeoJSONFile(file.name, JSON.parse(await file.text()));
+            } catch (err) {
+                console.warn(`Could not read ${file.name}`, err);
+                return { name: file.name, unreadable: true };
+            }
+        }
+
+        /** True while another operation owns the dataset, so an import must not interleave with it */
+        function isImportBusy() {
+            return __importInProgress || isBlockingOverlayOpen() || drawingCoords.length > 0 || !!lassoDrawState || __draggingVertexActive;
+        }
+
+        /**
+         * Load one or more GeoJSON files as a new dataset, or append them to the open one.
+         * Unreadable files and wrong-CRS data are reported and skipped, fatally invalid
+         * features are offered as a separate download, and the rest is merged.
+         */
+        async function importGeoJSONFiles(fileList, append = false) {
+            const files = Array.from(fileList || []);
+            if (__importInProgress || files.length === 0) return;
+            const supported = files.filter(f => isGeoJSONFileName(f.name));
+            const unsupported = files.filter(f => !isGeoJSONFileName(f.name));
+            if (unsupported.length) showErrorNotification(getText('filesSkippedUnsupported', unsupported.map(f => f.name).join(', ')), 'amber');
+            if (supported.length === 0) return;
+
+            __importInProgress = true;
+            const loadingOverlay = document.getElementById('loadingOverlay');
+            loadingOverlay.style.display = 'flex';
+            try {
+                if (!append) {
+                    hideWelcomeOverlay();
+                    if (!map) initializeMap();
+                }
+                if (typeof turf === 'undefined' || typeof turf.booleanValid !== 'function') {
+                    showErrorNotification(getText('turfLoadFailed'), 'amber');
+                }
+                const reports = await Promise.all(supported.map(readGeoJSONFile));
+                loadingOverlay.style.display = 'none';
+
+                const unreadable = reports.filter(r => r.unreadable);
+                const readable = reports.filter(r => !r.unreadable);
+                if (unreadable.length) showErrorNotification(getText('fileNotGeoJSON', unreadable.map(r => r.name).join(', ')), 'red');
+                if (readable.length === 0) {
+                    if (!append) {
+                        alert(getText('invalidGeoJSON'));
+                        showWelcomeOverlay();
+                    }
+                    return;
+                }
+
+                const crsIssue = readable.some(hasCrsIssue);
+                if (crsIssue) await showCrsWarningOverlay(readable);
+                // Skipped files are not reported further: their invalid features are moot
+                const accepted = readable.filter(isFileAccepted);
+                const features = accepted.flatMap(r => r.valid);
+                const invalid = accepted.flatMap(r => r.invalid);
+                if (invalid.length) await showInvalidFeaturesOverlay(invalid);
+
+                if (append) {
+                    appendImportedFeatures(features, accepted);
+                } else {
+                    loadImportedFeatures(features, readable, crsIssue || invalid.length > 0 || unreadable.length > 0);
+                }
+                const areaConverted = accepted.reduce((n, r) => n + r.areaConverted, 0);
+                if (areaConverted > 0) showErrorNotification(getText('areaValuesConverted', areaConverted), 'green');
+            } catch (err) {
+                console.error('GeoJSON import failed', err);
+                showErrorNotification(getText('errorProcessingGeoJSON', err.message || err), 'red');
+                if (!append) showWelcomeOverlay();
+            } finally {
+                loadingOverlay.style.display = 'none';
+                __importInProgress = false;
+            }
+        }
+
+        function loadImportedFeatures(features, reports, hadRejections) {
+            // An empty FeatureCollection still opens as an empty project; only fully rejected input goes back
+            if (features.length === 0 && hadRejections) {
+                showErrorNotification(getText('noFeaturesLoaded'), 'red');
+                showWelcomeOverlay();
+                return;
+            }
+            const sources = reports.filter(r => isFileAccepted(r) && r.valid.length > 0);
+            __undoStack = [];
+            __redoStack = [];
+            originalFilename = stripGeoJSONExtension((sources[0] || reports[0]).name) + (sources.length > 1 ? '_merged' : '');
+            processGeoJSON({ type: 'FeatureCollection', features });
+            if (sources.length > 1) showErrorNotification(getText('filesMerged', features.length, sources.length), 'green');
+        }
+
+        function appendImportedFeatures(features, reports) {
+            if (features.length === 0) {
+                showErrorNotification(getText('noFeaturesLoaded'), 'amber');
+                return;
+            }
+            // Check results describe the pre-merge dataset, so leave Check mode instead of showing stale issues
+            if (currentMode === MODES.VALIDATION) switchMode(MODES.VIEW);
+            disableVertexEditing();
+            disablePointEditing();
+            map.closePopup();
+            if (!currentGeoJSON || !Array.isArray(currentGeoJSON.features)) currentGeoJSON = { type: 'FeatureCollection', features: [] };
+            pushUndoSnapshot('import-append');
+            for (const feature of features) currentGeoJSON.features.push(feature);
+            const sources = reports.filter(r => r.valid.length > 0);
+            if (!originalFilename) originalFilename = stripGeoJSONExtension(sources[0].name);
+            processGeoJSON(currentGeoJSON, true);
+
+            const bounds = features.map(getFeatureBounds).filter(Boolean).reduce((all, b) => all.extend(b), L.latLngBounds([]));
+            if (bounds.isValid()) map.fitBounds(bounds);
+            showErrorNotification(getText('featuresAdded', features.length, sources.length), 'green');
+        }
+
+        /** Lists wrong-CRS files; out-of-range files get an opt-in to load their in-range features (sets report.loadAnyway) */
+        function showCrsWarningOverlay(reports) {
+            return new Promise(resolve => {
+                const overlay = document.getElementById('crsWarningOverlay');
+                const continueButton = document.getElementById('crsWarningContinue');
+                const remaining = document.getElementById('crsWarningRemaining');
+
+                function refresh() {
+                    const loadable = reports.filter(isFileAccepted).reduce((n, r) => n + r.valid.length, 0);
+                    remaining.textContent = loadable > 0 ? getText('crsWarningRemaining', loadable) : getText('crsWarningNothingLeft');
+                    continueButton.textContent = getText(loadable > 0 ? 'continueWithValidButton' : 'close');
+                }
+
+                // File names and CRS ids come from the user's files, so they are only ever set as text
+                document.getElementById('crsWarningList').replaceChildren(...reports.filter(hasCrsIssue).map(r => {
+                    const li = document.createElement('li');
+                    const reasons = [];
+                    if (r.foreignCount === r.total) reasons.push(getText('crsWarningDeclared', r.name, r.foreignCrs, r.total));
+                    else if (r.foreignCount > 0) reasons.push(getText('crsWarningSplit', r.name, r.foreignCount, r.total, r.foreignCrs));
+                    if (r.outOfRange > 0) reasons.push(getText('crsWarningOutOfRange', r.name, r.outOfRange, r.total));
+                    li.textContent = reasons.join(' ');
+                    if (r.valid.length > 0) {
+                        const label = document.createElement('label');
+                        const checkbox = document.createElement('input');
+                        label.className = 'crs-load-anyway';
+                        checkbox.type = 'checkbox';
+                        r.loadAnyway = false;
+                        checkbox.addEventListener('change', () => { r.loadAnyway = checkbox.checked; refresh(); });
+                        label.append(checkbox, getText(r.foreignCount > 0 ? 'crsLoadCompatible' : 'crsLoadInRangeAnyway', r.valid.length));
+                        li.append(label);
+                    }
+                    return li;
+                }));
+                refresh();
+                continueButton.onclick = function() {
+                    overlay.style.display = 'none';
+                    resolve();
+                };
+                overlay.style.display = 'flex';
+                continueButton.focus();
+            });
+        }
+
+        function showInvalidFeaturesOverlay(invalidFeatures) {
+            return new Promise(resolve => {
+                const overlay = document.getElementById('invalidFeaturesOverlay');
+                const downloadButton = document.getElementById('downloadInvalidFeatures');
+                const continueButton = document.getElementById('continueWithValid');
+                document.getElementById('invalidFeaturesMessage').textContent =
+                    getText('invalidFeaturesMessage').replace('{count}', invalidFeatures.length);
+
+                const blob = new Blob([JSON.stringify({ type: 'FeatureCollection', features: invalidFeatures }, null, 2)], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                downloadButton.href = url;
+                continueButton.onclick = function() {
+                    overlay.style.display = 'none';
+                    URL.revokeObjectURL(url);
+                    resolve();
+                };
+                overlay.style.display = 'flex';
+                continueButton.focus();
+            });
+        }
+
+        /** Dropping GeoJSON anywhere over the open map appends it; a dropped file must never replace the app */
+        function initializeMapFileDrop() {
+            const overlay = document.getElementById('mapDropOverlay');
+            const welcomeOverlay = document.getElementById('welcomeOverlay');
+            const titleKeys = { ready: 'dropOverlayTitle', unsupported: 'dropOverlayUnsupported', busy: 'dropOverlayBusy' };
+            let hideTimer = null;
+
+            const carriesFiles = e => !!e.dataTransfer && Array.from(e.dataTransfer.types || []).includes('Files');
+            const isMapOpen = () => !!map && welcomeOverlay.getClientRects().length === 0;
+            const hide = () => { clearTimeout(hideTimer); overlay.classList.remove('show'); };
+            const hideSoon = ms => { clearTimeout(hideTimer); hideTimer = setTimeout(hide, ms); };
+
+            function dropState(dataTransfer) {
+                if (isImportBusy()) return 'busy';
+                // File names stay hidden until the drop, so only rule out files whose MIME type is clearly not JSON
+                const types = Array.from(dataTransfer.items || []).filter(i => i.kind === 'file').map(i => i.type);
+                return types.length > 0 && types.every(t => t && !/json|text\/plain/i.test(t)) ? 'unsupported' : 'ready';
+            }
+
+            function show(state) {
+                if (overlay.classList.contains('show') && overlay.dataset.state === state) return;
+                overlay.dataset.state = state;
+                document.getElementById('mapDropTitle').textContent = getText(titleKeys[state]);
+                document.getElementById('mapDropSubtitle').textContent = state === 'ready' ? getText('dropOverlaySubtitle') : '';
+                overlay.classList.add('show');
+            }
+
+            function onDragOver(e) {
+                if (!carriesFiles(e)) return;
+                e.preventDefault();
+                const state = isMapOpen() ? dropState(e.dataTransfer) : null;
+                e.dataTransfer.dropEffect = state === 'ready' ? 'copy' : 'none';
+                if (!state) return;
+                show(state);
+                // dragover repeats while hovering, so silence means the drag was cancelled or left the window
+                hideSoon(1000);
+            }
+
+            window.addEventListener('dragenter', onDragOver);
+            window.addEventListener('dragover', onDragOver);
+            window.addEventListener('dragleave', function(e) {
+                const leftWindow = e.clientX <= 0 || e.clientY <= 0 || e.clientX >= window.innerWidth || e.clientY >= window.innerHeight;
+                if (!e.relatedTarget && leftWindow) hideSoon(100);
+            });
+            window.addEventListener('drop', function(e) {
+                if (!carriesFiles(e)) return;
+                e.preventDefault();
+                hide();
+                if (!isMapOpen()) return;
+                if (isImportBusy()) {
+                    showErrorNotification(getText('dropOverlayBusy'), 'amber');
+                    return;
+                }
+                importGeoJSONFiles(e.dataTransfer.files, true);
+            });
+        }
+
+        // ============================================================================
+        // END GEOJSON IMPORT PIPELINE
+        // ============================================================================
 
         // ============================================================================
         // VALIDATION AND CLEANING CORE MODULE
@@ -17582,7 +18115,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
         function isBlockingOverlayOpen() {
             if (document.querySelector('.properties-modal.show')) return true;
-            return ['welcomeOverlay', 'loadingOverlay', 'invalidFeaturesOverlay'].some(function(id) {
+            return ['welcomeOverlay', 'loadingOverlay', 'invalidFeaturesOverlay', 'crsWarningOverlay'].some(function(id) {
                 const el = document.getElementById(id);
                 return !!el && el.getClientRects().length > 0;
             });
