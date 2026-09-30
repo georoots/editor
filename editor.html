@@ -1410,6 +1410,103 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
             border-radius: 3px;
         }
 
+        .legend-shortcuts-link {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            width: 100%;
+            margin-top: 6px;
+            padding: 6px 0 0;
+            border: none;
+            border-top: 1px solid var(--gray-border);
+            background: none;
+            color: var(--gray-medium);
+            font-size: 0.75rem;
+            text-align: left;
+            cursor: pointer;
+        }
+
+        .legend-shortcuts-link:hover,
+        .legend-shortcuts-link:focus-visible {
+            color: var(--confirm-color);
+        }
+
+        /* Keyboard shortcuts modal */
+        kbd {
+            display: inline-block;
+            min-width: 1.6em;
+            padding: 1px 6px;
+            border: 1px solid var(--gray-input);
+            border-bottom-width: 2px;
+            border-radius: 4px;
+            background: var(--light-color);
+            color: var(--gray-dark);
+            font-family: inherit;
+            font-size: 0.75rem;
+            font-weight: 600;
+            line-height: 1.5;
+            text-align: center;
+        }
+
+        .shortcuts-content {
+            width: min(780px, 94vw);
+            max-width: none;
+            max-height: 86vh;
+        }
+
+        .shortcuts-body {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 18px 28px;
+        }
+
+        .shortcuts-group h4 {
+            margin: 0 0 8px;
+            color: var(--primary-color);
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+
+        .shortcut-row {
+            display: grid;
+            grid-template-columns: 110px 1fr;
+            gap: 10px;
+            align-items: baseline;
+            padding: 5px 0;
+            border-bottom: 1px solid var(--gray-border);
+            font-size: 0.875rem;
+        }
+
+        .shortcut-keys {
+            white-space: nowrap;
+            color: var(--gray-medium);
+            font-size: 0.75rem;
+        }
+
+        .shortcut-desc small {
+            display: block;
+            margin-top: 2px;
+            font-size: 0.75rem;
+            color: var(--gray-medium);
+        }
+
+        .shortcut-desc .shortcut-sel {
+            color: var(--secondary-color);
+        }
+
+        /* Selection-aware variants stand out while a multi-selection is active */
+        .shortcuts-modal.has-selection .shortcut-sel {
+            font-weight: 700;
+        }
+
+        .shortcuts-note {
+            margin: 16px 0 0;
+            font-size: 0.75rem;
+            color: var(--gray-medium);
+        }
+
         #year-buttons button {
             padding: 6px 8px;
             margin: 2px;
@@ -2406,6 +2503,9 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
     <div id="mapLegend" class="legend hidden">
         <h4 data-i18n="legendTitle">Legend</h4>
         <div id="legend-items"></div>
+        <button type="button" class="legend-shortcuts-link" onclick="openShortcutsModal()">
+            <span data-i18n="shortcutsLink">Show Keyboard Shortcuts</span><kbd>?</kbd>
+        </button>
     </div>
 
     <!-- Map Container -->
@@ -2647,6 +2747,18 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
         </div>
     </div>
 
+    <!-- Keyboard Shortcuts Modal (rows are rendered by renderShortcutsModal) -->
+    <div id="shortcutsModal" class="properties-modal shortcuts-modal" role="dialog" aria-modal="true" aria-labelledby="shortcutsTitle" onclick="if (event.target === this) closeShortcutsModal()">
+        <div class="properties-content shortcuts-content">
+            <div class="properties-header">
+                <h3 id="shortcutsTitle" data-i18n="shortcutsTitle">Keyboard Shortcuts</h3>
+                <button class="properties-close" onclick="closeShortcutsModal()" aria-label="Close">&times;</button>
+            </div>
+            <div id="shortcutsBody" class="shortcuts-body"></div>
+            <p class="shortcuts-note" data-i18n="shortcutsNote">Tool and action keys switch to Edit mode when needed. Switching mode or tool clears the current selection. Shortcuts are paused while you type in a field or while a dialog is open.</p>
+        </div>
+    </div>
+
     <!-- Export Modal -->
     <div id="exportModal" class="properties-modal">
         <div class="export-content">
@@ -2880,7 +2992,35 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
         "lassoHint": "Tip: Hold Ctrl/Cmd and drag on the map to select multiple features, then run bulk actions.",
         "exportSelectedBanner": "Exporting {0} selected features",
         "bulkAutoCleanScope": "Auto-Clean will be applied only to the {0} selected items. Overlaps or duplicates with unselected features are not affected.",
-        "bulkAutoCleanDone": "Auto-Clean finished: {0} of {1} selected items removed"
+        "bulkAutoCleanDone": "Auto-Clean finished: {0} of {1} selected items removed",
+        "shortcutsLink": "Show Keyboard Shortcuts",
+        "shortcutsTitle": "Keyboard Shortcuts",
+        "shortcutsNote": "Tool and action keys switch to Edit mode when needed. Switching mode or tool clears the current selection. Shortcuts are paused while you type in a field or while a dialog is open.",
+        "shortcutsGroupLayers": "Map Layers",
+        "shortcutsGroupModes": "Modes",
+        "shortcutsGroupTools": "Editing Tools",
+        "shortcutsGroupActions": "Feature Actions",
+        "shortcutsGroupSelection": "Multi-Selection",
+        "shortcutsGroupHistory": "History & Help",
+        "shortcutToggleSnap": "Toggle snap on/off",
+        "shortcutPressAgainToCancel": "Press again or Esc to cancel",
+        "shortcutWithSelection": "With selection: {0}",
+        "shortcutSelEditProperties": "edit properties of selected features",
+        "shortcutSelDelete": "delete selected features",
+        "shortcutSelAutoClean": "auto-clean selected features",
+        "shortcutSelExport": "export selected features",
+        "shortcutKeyClick": "Click",
+        "shortcutKeyDrag": "Drag",
+        "shortcutSelectToggle": "Select or deselect a feature",
+        "shortcutLasso": "Lasso-select features",
+        "shortcutClearSelection": "Clear selection",
+        "shortcutUndo": "Undo",
+        "shortcutRedo": "Redo",
+        "shortcutToggleLast": "Toggle last change",
+        "shortcutShowHelp": "Show keyboard shortcuts",
+        "shortcutFinishPolygonFirst": "Finish the polygon with a right-click first, or press P or Esc to cancel it.",
+        "shortcutSnapOn": "Snap enabled",
+        "shortcutSnapOff": "Snap disabled"
     }
     </script>
 
@@ -3089,7 +3229,35 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
         "lassoHint": "Consejo: mantén Ctrl/Cmd y arrastra sobre el mapa para seleccionar varios elementos y luego ejecuta acciones en lote.",
         "exportSelectedBanner": "Exportando {0} elementos seleccionados",
         "bulkAutoCleanScope": "La limpieza automática se aplicará solo a los {0} elementos seleccionados. Los solapamientos o duplicados con elementos no seleccionados no se ven afectados.",
-        "bulkAutoCleanDone": "Limpieza automática completada: se eliminaron {0} de {1} elementos seleccionados"
+        "bulkAutoCleanDone": "Limpieza automática completada: se eliminaron {0} de {1} elementos seleccionados",
+        "shortcutsLink": "Mostrar atajos de teclado",
+        "shortcutsTitle": "Atajos de teclado",
+        "shortcutsNote": "Las teclas de herramientas y acciones cambian al modo Edición cuando es necesario. Cambiar de modo o herramienta borra la selección actual. Los atajos se pausan mientras escribe en un campo o mientras hay un cuadro de diálogo abierto.",
+        "shortcutsGroupLayers": "Capas del mapa",
+        "shortcutsGroupModes": "Modos",
+        "shortcutsGroupTools": "Herramientas de edición",
+        "shortcutsGroupActions": "Acciones de elementos",
+        "shortcutsGroupSelection": "Selección múltiple",
+        "shortcutsGroupHistory": "Historial y ayuda",
+        "shortcutToggleSnap": "Activar/desactivar ajuste",
+        "shortcutPressAgainToCancel": "Pulse de nuevo o Esc para cancelar",
+        "shortcutWithSelection": "Con selección: {0}",
+        "shortcutSelEditProperties": "editar propiedades de los elementos seleccionados",
+        "shortcutSelDelete": "eliminar los elementos seleccionados",
+        "shortcutSelAutoClean": "limpiar automáticamente los elementos seleccionados",
+        "shortcutSelExport": "exportar los elementos seleccionados",
+        "shortcutKeyClick": "Clic",
+        "shortcutKeyDrag": "Arrastrar",
+        "shortcutSelectToggle": "Seleccionar o deseleccionar un elemento",
+        "shortcutLasso": "Seleccionar elementos con lazo",
+        "shortcutClearSelection": "Borrar selección",
+        "shortcutUndo": "Deshacer",
+        "shortcutRedo": "Rehacer",
+        "shortcutToggleLast": "Alternar el último cambio",
+        "shortcutShowHelp": "Mostrar atajos de teclado",
+        "shortcutFinishPolygonFirst": "Primero termine el polígono con clic derecho, o pulse P o Esc para cancelarlo.",
+        "shortcutSnapOn": "Ajuste activado",
+        "shortcutSnapOff": "Ajuste desactivado"
     }
     </script>
 
@@ -3298,7 +3466,35 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
         "lassoHint": "Astuce : maintenez Ctrl/Cmd et faites glisser sur la carte pour sélectionner plusieurs éléments, puis lancez des actions groupées.",
         "exportSelectedBanner": "Export de {0} éléments sélectionnés",
         "bulkAutoCleanScope": "Le nettoyage automatique s'appliquera uniquement aux {0} éléments sélectionnés. Les chevauchements ou doublons avec des éléments non sélectionnés ne sont pas concernés.",
-        "bulkAutoCleanDone": "Nettoyage automatique terminé : {0} éléments sur {1} sélectionnés supprimés"
+        "bulkAutoCleanDone": "Nettoyage automatique terminé : {0} éléments sur {1} sélectionnés supprimés",
+        "shortcutsLink": "Afficher les raccourcis clavier",
+        "shortcutsTitle": "Raccourcis clavier",
+        "shortcutsNote": "Les touches d'outils et d'actions passent en mode Édition si nécessaire. Changer de mode ou d'outil efface la sélection actuelle. Les raccourcis sont suspendus pendant la saisie dans un champ ou lorsqu'une boîte de dialogue est ouverte.",
+        "shortcutsGroupLayers": "Couches de carte",
+        "shortcutsGroupModes": "Modes",
+        "shortcutsGroupTools": "Outils d'édition",
+        "shortcutsGroupActions": "Actions sur les entités",
+        "shortcutsGroupSelection": "Sélection multiple",
+        "shortcutsGroupHistory": "Historique et aide",
+        "shortcutToggleSnap": "Activer/désactiver l'accrochage",
+        "shortcutPressAgainToCancel": "Appuyez à nouveau ou sur Échap pour annuler",
+        "shortcutWithSelection": "Avec sélection : {0}",
+        "shortcutSelEditProperties": "modifier les propriétés des entités sélectionnées",
+        "shortcutSelDelete": "supprimer les entités sélectionnées",
+        "shortcutSelAutoClean": "nettoyer automatiquement les entités sélectionnées",
+        "shortcutSelExport": "exporter les entités sélectionnées",
+        "shortcutKeyClick": "Clic",
+        "shortcutKeyDrag": "Glisser",
+        "shortcutSelectToggle": "Sélectionner ou désélectionner une entité",
+        "shortcutLasso": "Sélectionner des entités au lasso",
+        "shortcutClearSelection": "Effacer la sélection",
+        "shortcutUndo": "Annuler",
+        "shortcutRedo": "Rétablir",
+        "shortcutToggleLast": "Basculer la dernière modification",
+        "shortcutShowHelp": "Afficher les raccourcis clavier",
+        "shortcutFinishPolygonFirst": "Terminez d'abord le polygone par un clic droit, ou appuyez sur P ou Échap pour l'annuler.",
+        "shortcutSnapOn": "Accrochage activé",
+        "shortcutSnapOff": "Accrochage désactivé"
     }
     </script>
     <script type="application/json" id="lang-cs">
@@ -3505,7 +3701,35 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
             "lassoHint": "Tip: Podržte Ctrl/Cmd a tažením po mapě vyberte více objektů a spusťte hromadné akce.",
             "exportSelectedBanner": "Exportuje se {0} vybraných objektů",
             "bulkAutoCleanScope": "Automatické čištění se použije pouze na {0} vybraných položek. Překryvy a duplicity s nevybranými objekty nebudou dotčeny.",
-            "bulkAutoCleanDone": "Automatické čištění dokončeno: odstraněno {0} z {1} vybraných položek"
+            "bulkAutoCleanDone": "Automatické čištění dokončeno: odstraněno {0} z {1} vybraných položek",
+            "shortcutsLink": "Zobrazit klávesové zkratky",
+            "shortcutsTitle": "Klávesové zkratky",
+            "shortcutsNote": "Klávesy nástrojů a akcí v případě potřeby přepnou do režimu úprav. Přepnutí režimu nebo nástroje zruší aktuální výběr. Zkratky nefungují při psaní do pole ani když je otevřené dialogové okno.",
+            "shortcutsGroupLayers": "Mapové vrstvy",
+            "shortcutsGroupModes": "Režimy",
+            "shortcutsGroupTools": "Nástroje úprav",
+            "shortcutsGroupActions": "Akce s objekty",
+            "shortcutsGroupSelection": "Hromadný výběr",
+            "shortcutsGroupHistory": "Historie a nápověda",
+            "shortcutToggleSnap": "Zapnout/vypnout přichytávání",
+            "shortcutPressAgainToCancel": "Opětovným stiskem nebo klávesou Esc zrušíte",
+            "shortcutWithSelection": "S výběrem: {0}",
+            "shortcutSelEditProperties": "upravit vlastnosti vybraných objektů",
+            "shortcutSelDelete": "smazat vybrané objekty",
+            "shortcutSelAutoClean": "automaticky vyčistit vybrané objekty",
+            "shortcutSelExport": "exportovat vybrané objekty",
+            "shortcutKeyClick": "Klik",
+            "shortcutKeyDrag": "Tažení",
+            "shortcutSelectToggle": "Vybrat nebo zrušit výběr objektu",
+            "shortcutLasso": "Vybrat objekty lasem",
+            "shortcutClearSelection": "Zrušit výběr",
+            "shortcutUndo": "Zpět",
+            "shortcutRedo": "Znovu",
+            "shortcutToggleLast": "Přepnout poslední změnu",
+            "shortcutShowHelp": "Zobrazit klávesové zkratky",
+            "shortcutFinishPolygonFirst": "Nejprve dokončete polygon pravým kliknutím, nebo jej zrušte klávesou P či Esc.",
+            "shortcutSnapOn": "Přichytávání zapnuto",
+            "shortcutSnapOff": "Přichytávání vypnuto"
         }
     </script>
 
@@ -3714,7 +3938,35 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
         "lassoHint": "Dica: mantenha Ctrl/Cmd pressionado e arraste no mapa para selecionar vários elementos e depois execute ações em lote.",
         "exportSelectedBanner": "Exportando {0} elementos selecionados",
         "bulkAutoCleanScope": "A limpeza automática será aplicada apenas aos {0} itens selecionados. Sobreposições ou duplicatas com elementos não selecionados não são afetadas.",
-        "bulkAutoCleanDone": "Limpeza automática concluída: {0} de {1} itens selecionados removidos"
+        "bulkAutoCleanDone": "Limpeza automática concluída: {0} de {1} itens selecionados removidos",
+        "shortcutsLink": "Mostrar atalhos de teclado",
+        "shortcutsTitle": "Atalhos de teclado",
+        "shortcutsNote": "As teclas de ferramentas e ações mudam para o modo Edição quando necessário. Mudar de modo ou ferramenta limpa a seleção atual. Os atalhos ficam pausados enquanto digita num campo ou enquanto uma caixa de diálogo está aberta.",
+        "shortcutsGroupLayers": "Camadas do mapa",
+        "shortcutsGroupModes": "Modos",
+        "shortcutsGroupTools": "Ferramentas de edição",
+        "shortcutsGroupActions": "Ações de elementos",
+        "shortcutsGroupSelection": "Seleção múltipla",
+        "shortcutsGroupHistory": "Histórico e ajuda",
+        "shortcutToggleSnap": "Ativar/desativar aderência",
+        "shortcutPressAgainToCancel": "Pressione novamente ou Esc para cancelar",
+        "shortcutWithSelection": "Com seleção: {0}",
+        "shortcutSelEditProperties": "editar propriedades dos elementos selecionados",
+        "shortcutSelDelete": "excluir os elementos selecionados",
+        "shortcutSelAutoClean": "limpar automaticamente os elementos selecionados",
+        "shortcutSelExport": "exportar os elementos selecionados",
+        "shortcutKeyClick": "Clique",
+        "shortcutKeyDrag": "Arrastar",
+        "shortcutSelectToggle": "Selecionar ou desmarcar um elemento",
+        "shortcutLasso": "Selecionar elementos com laço",
+        "shortcutClearSelection": "Limpar seleção",
+        "shortcutUndo": "Desfazer",
+        "shortcutRedo": "Refazer",
+        "shortcutToggleLast": "Alternar a última alteração",
+        "shortcutShowHelp": "Mostrar atalhos de teclado",
+        "shortcutFinishPolygonFirst": "Termine primeiro o polígono com um clique direito, ou pressione P ou Esc para cancelá-lo.",
+        "shortcutSnapOn": "Aderência ativada",
+        "shortcutSnapOff": "Aderência desativada"
     }
     </script>
 
@@ -3923,7 +4175,35 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
         "lassoHint": "Kidokezo: Shikilia Ctrl/Cmd na buruta kwenye ramani kuchagua vipengele vingi, kisha tekeleza vitendo vya jumla.",
         "exportSelectedBanner": "Kuhamisha vipengele {0} vilivyochaguliwa",
         "bulkAutoCleanScope": "Usafishaji wa kiotomatiki utatumika kwa vitu {0} vilivyochaguliwa pekee. Muingiliano au marudio na vipengele visivyochaguliwa haviathiriwi.",
-        "bulkAutoCleanDone": "Usafishaji wa kiotomatiki umekamilika: {0} kati ya vitu {1} vilivyochaguliwa vimeondolewa"
+        "bulkAutoCleanDone": "Usafishaji wa kiotomatiki umekamilika: {0} kati ya vitu {1} vilivyochaguliwa vimeondolewa",
+        "shortcutsLink": "Onyesha njia za mkato za kibodi",
+        "shortcutsTitle": "Njia za mkato za kibodi",
+        "shortcutsNote": "Vitufe vya zana na vitendo hubadilisha hadi hali ya Kuhariri inapohitajika. Kubadilisha hali au zana hufuta uteuzi wa sasa. Njia za mkato husitishwa unapoandika kwenye sehemu au kidirisha kikiwa wazi.",
+        "shortcutsGroupLayers": "Tabaka za ramani",
+        "shortcutsGroupModes": "Hali",
+        "shortcutsGroupTools": "Zana za kuhariri",
+        "shortcutsGroupActions": "Vitendo vya vipengele",
+        "shortcutsGroupSelection": "Uteuzi wa vingi",
+        "shortcutsGroupHistory": "Historia na msaada",
+        "shortcutToggleSnap": "Washa/zima kunasa",
+        "shortcutPressAgainToCancel": "Bonyeza tena au Esc ili kughairi",
+        "shortcutWithSelection": "Ukiwa na uteuzi: {0}",
+        "shortcutSelEditProperties": "hariri sifa za vipengele vilivyochaguliwa",
+        "shortcutSelDelete": "futa vipengele vilivyochaguliwa",
+        "shortcutSelAutoClean": "safisha kiotomatiki vipengele vilivyochaguliwa",
+        "shortcutSelExport": "hamisha vipengele vilivyochaguliwa",
+        "shortcutKeyClick": "Bofya",
+        "shortcutKeyDrag": "Buruta",
+        "shortcutSelectToggle": "Chagua au ondoa uteuzi wa kipengele",
+        "shortcutLasso": "Chagua vipengele kwa kamba",
+        "shortcutClearSelection": "Futa uteuzi",
+        "shortcutUndo": "Tendua",
+        "shortcutRedo": "Rudia",
+        "shortcutToggleLast": "Badilisha mabadiliko ya mwisho",
+        "shortcutShowHelp": "Onyesha njia za mkato za kibodi",
+        "shortcutFinishPolygonFirst": "Kwanza maliza poligoni kwa kubofya kulia, au bonyeza P au Esc ili kuighairi.",
+        "shortcutSnapOn": "Kunasa kumewashwa",
+        "shortcutSnapOff": "Kunasa kumezimwa"
     }
     </script>
 
@@ -4132,7 +4412,35 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
         "lassoHint": "提示：按住 Ctrl/Cmd 并在地图上拖动可选择多个要素，然后执行批量操作。",
         "exportSelectedBanner": "正在导出 {0} 个所选要素",
         "bulkAutoCleanScope": "自动清理仅应用于 {0} 个所选项目。与未选要素的重叠或重复不受影响。",
-        "bulkAutoCleanDone": "自动清理完成：{1} 个所选项目中已移除 {0} 个"
+        "bulkAutoCleanDone": "自动清理完成：{1} 个所选项目中已移除 {0} 个",
+        "shortcutsLink": "显示键盘快捷键",
+        "shortcutsTitle": "键盘快捷键",
+        "shortcutsNote": "工具和操作键会在需要时切换到编辑模式。切换模式或工具会清除当前选择。在输入框中输入或打开对话框时，快捷键暂停使用。",
+        "shortcutsGroupLayers": "地图图层",
+        "shortcutsGroupModes": "模式",
+        "shortcutsGroupTools": "编辑工具",
+        "shortcutsGroupActions": "要素操作",
+        "shortcutsGroupSelection": "多选",
+        "shortcutsGroupHistory": "历史记录与帮助",
+        "shortcutToggleSnap": "开启/关闭捕捉",
+        "shortcutPressAgainToCancel": "再次按下或按 Esc 取消",
+        "shortcutWithSelection": "有选择时：{0}",
+        "shortcutSelEditProperties": "编辑所选要素的属性",
+        "shortcutSelDelete": "删除所选要素",
+        "shortcutSelAutoClean": "自动清理所选要素",
+        "shortcutSelExport": "导出所选要素",
+        "shortcutKeyClick": "单击",
+        "shortcutKeyDrag": "拖动",
+        "shortcutSelectToggle": "选择或取消选择要素",
+        "shortcutLasso": "套索选择要素",
+        "shortcutClearSelection": "清除选择",
+        "shortcutUndo": "撤销",
+        "shortcutRedo": "重做",
+        "shortcutToggleLast": "切换最后一次更改",
+        "shortcutShowHelp": "显示键盘快捷键",
+        "shortcutFinishPolygonFirst": "请先右键单击完成多边形，或按 P 或 Esc 取消。",
+        "shortcutSnapOn": "捕捉已开启",
+        "shortcutSnapOff": "捕捉已关闭"
     }
     </script>
 
@@ -4341,7 +4649,35 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
         "lassoHint": "เคล็ดลับ: กด Ctrl/Cmd ค้างไว้แล้วลากบนแผนที่เพื่อเลือกหลายฟีเจอร์ จากนั้นดำเนินการแบบชุด",
         "exportSelectedBanner": "กำลังส่งออก {0} ฟีเจอร์ที่เลือก",
         "bulkAutoCleanScope": "การทำความสะอาดอัตโนมัติจะใช้กับรายการที่เลือก {0} รายการเท่านั้น การซ้อนทับหรือซ้ำกับฟีเจอร์ที่ไม่ได้เลือกจะไม่ได้รับผลกระทบ",
-        "bulkAutoCleanDone": "ทำความสะอาดอัตโนมัติเสร็จสิ้น: ลบ {0} จาก {1} รายการที่เลือกแล้ว"
+        "bulkAutoCleanDone": "ทำความสะอาดอัตโนมัติเสร็จสิ้น: ลบ {0} จาก {1} รายการที่เลือกแล้ว",
+        "shortcutsLink": "แสดงแป้นพิมพ์ลัด",
+        "shortcutsTitle": "แป้นพิมพ์ลัด",
+        "shortcutsNote": "ปุ่มเครื่องมือและการดำเนินการจะสลับไปยังโหมดแก้ไขเมื่อจำเป็น การเปลี่ยนโหมดหรือเครื่องมือจะล้างการเลือกปัจจุบัน แป้นพิมพ์ลัดจะหยุดทำงานชั่วคราวขณะพิมพ์ในช่องหรือเมื่อมีกล่องโต้ตอบเปิดอยู่",
+        "shortcutsGroupLayers": "ชั้นแผนที่",
+        "shortcutsGroupModes": "โหมด",
+        "shortcutsGroupTools": "เครื่องมือแก้ไข",
+        "shortcutsGroupActions": "การดำเนินการกับฟีเจอร์",
+        "shortcutsGroupSelection": "การเลือกหลายรายการ",
+        "shortcutsGroupHistory": "ประวัติและความช่วยเหลือ",
+        "shortcutToggleSnap": "เปิด/ปิดการสแนป",
+        "shortcutPressAgainToCancel": "กดอีกครั้งหรือกด Esc เพื่อยกเลิก",
+        "shortcutWithSelection": "เมื่อมีการเลือก: {0}",
+        "shortcutSelEditProperties": "แก้ไขคุณสมบัติของฟีเจอร์ที่เลือก",
+        "shortcutSelDelete": "ลบฟีเจอร์ที่เลือก",
+        "shortcutSelAutoClean": "ทำความสะอาดอัตโนมัติฟีเจอร์ที่เลือก",
+        "shortcutSelExport": "ส่งออกฟีเจอร์ที่เลือก",
+        "shortcutKeyClick": "คลิก",
+        "shortcutKeyDrag": "ลาก",
+        "shortcutSelectToggle": "เลือกหรือยกเลิกการเลือกฟีเจอร์",
+        "shortcutLasso": "เลือกฟีเจอร์ด้วยบ่วงบาศ",
+        "shortcutClearSelection": "ล้างการเลือก",
+        "shortcutUndo": "เลิกทำ",
+        "shortcutRedo": "ทำซ้ำ",
+        "shortcutToggleLast": "สลับการเปลี่ยนแปลงล่าสุด",
+        "shortcutShowHelp": "แสดงแป้นพิมพ์ลัด",
+        "shortcutFinishPolygonFirst": "กรุณาคลิกขวาเพื่อวาดรูปหลายเหลี่ยมให้เสร็จก่อน หรือกด P หรือ Esc เพื่อยกเลิก",
+        "shortcutSnapOn": "เปิดการสแนปแล้ว",
+        "shortcutSnapOff": "ปิดการสแนปแล้ว"
     }
     </script>
 
@@ -4550,7 +4886,35 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
         "lassoHint": "ምክር፦ Ctrl/Cmd ይያዙና በካርታው ላይ በመጎተት ብዙ ባህሪዎችን ይምረጡ፣ ከዚያ የስብስብ ተግባራትን ያከናውኑ።",
         "exportSelectedBanner": "{0} የተመረጡ ባህሪዎችን በማውጣት ላይ",
         "bulkAutoCleanScope": "ራስ-ሰር ማጽዳት የሚተገበረው በተመረጡት {0} ንጥሎች ላይ ብቻ ነው። ካልተመረጡ ባህሪዎች ጋር ያሉ መደራረቦች ወይም ድርብነቶች አይነኩም።",
-        "bulkAutoCleanDone": "ራስ-ሰር ማጽዳት ተጠናቋል፦ ከተመረጡት {1} ንጥሎች {0} ተወግደዋል"
+        "bulkAutoCleanDone": "ራስ-ሰር ማጽዳት ተጠናቋል፦ ከተመረጡት {1} ንጥሎች {0} ተወግደዋል",
+        "shortcutsLink": "የቁልፍ ሰሌዳ አቋራጮችን አሳይ",
+        "shortcutsTitle": "የቁልፍ ሰሌዳ አቋራጮች",
+        "shortcutsNote": "የመሣሪያ እና የተግባር ቁልፎች አስፈላጊ ሲሆን ወደ ማረሚያ ሁነታ ይቀይራሉ። ሁነታ ወይም መሣሪያ መቀየር የአሁኑን ምርጫ ያጸዳል። በመስክ ውስጥ ሲተይቡ ወይም መገናኛ ሳጥን ሲከፈት አቋራጮች ለጊዜው አይሰሩም።",
+        "shortcutsGroupLayers": "የካርታ ንብርብሮች",
+        "shortcutsGroupModes": "ሁነታዎች",
+        "shortcutsGroupTools": "የማረሚያ መሣሪያዎች",
+        "shortcutsGroupActions": "የባህሪ ተግባራት",
+        "shortcutsGroupSelection": "ብዙ ምርጫ",
+        "shortcutsGroupHistory": "ታሪክ እና እገዛ",
+        "shortcutToggleSnap": "ማጣበቅን አብራ/አጥፋ",
+        "shortcutPressAgainToCancel": "ለመሰረዝ እንደገና ይጫኑ ወይም Esc ይጫኑ",
+        "shortcutWithSelection": "ምርጫ ሲኖር፦ {0}",
+        "shortcutSelEditProperties": "የተመረጡ ባህሪዎችን ንብረቶች አርትዕ",
+        "shortcutSelDelete": "የተመረጡ ባህሪዎችን ሰርዝ",
+        "shortcutSelAutoClean": "የተመረጡ ባህሪዎችን በራስ-ሰር አጽዳ",
+        "shortcutSelExport": "የተመረጡ ባህሪዎችን ላክ",
+        "shortcutKeyClick": "ጠቅ",
+        "shortcutKeyDrag": "ጎትት",
+        "shortcutSelectToggle": "ባህሪ ምረጥ ወይም ምርጫን አንሳ",
+        "shortcutLasso": "ባህሪዎችን በላሶ ምረጥ",
+        "shortcutClearSelection": "ምርጫን አጽዳ",
+        "shortcutUndo": "ቀልብስ",
+        "shortcutRedo": "እንደገና አድርግ",
+        "shortcutToggleLast": "የመጨረሻውን ለውጥ ቀያይር",
+        "shortcutShowHelp": "የቁልፍ ሰሌዳ አቋራጮችን አሳይ",
+        "shortcutFinishPolygonFirst": "መጀመሪያ ፖሊጎኑን በቀኝ ጠቅታ ያጠናቅቁ፣ ወይም ለመሰረዝ P ወይም Esc ይጫኑ።",
+        "shortcutSnapOn": "ማጣበቅ በርቷል",
+        "shortcutSnapOff": "ማጣበቅ ጠፍቷል"
     }
     </script>
 
@@ -4696,32 +5060,8 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
             if (typeof resetSnapControlsToDefaults === 'function') {
                 resetSnapControlsToDefaults();
             }
-            // Global Undo/Redo/Toggle (Ctrl/Cmd+Z/Y/Q)
-            document.addEventListener('keydown', function(e){
-                try {
-                    const isInput = e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable);
-                    if (isInput) return; // respect native text undo/redo
-                    const key = (e.key || '').toLowerCase();
-                    if ((e.ctrlKey || e.metaKey) && key === 'z') {
-                        e.preventDefault();
-                        undoLastChange();
-                    } else if ((e.ctrlKey || e.metaKey) && key === 'y') {
-                        e.preventDefault();
-                        redoLastChange();
-                    } else if ((e.ctrlKey || e.metaKey) && key === 'q') {
-                        e.preventDefault();
-                        toggleLastStep();
-                    } else if (key === 'escape') {
-                        if (lassoDrawState) {
-                            e.preventDefault();
-                            cancelLassoDraw();
-                        } else if (multiSelection.size > 0 && !document.querySelector('.properties-modal.show')) {
-                            // Bulk modals and progress dialogs rely on the selection staying intact
-                            clearBulkSelection();
-                        }
-                    }
-                } catch(_) {}
-            }, true);
+            // Global keyboard shortcuts (undo/redo, modes, tools, layers...)
+            document.addEventListener('keydown', handleGlobalKeydown, true);
         });
 
         // Also reset when page is restored from bfcache or similar navigation
@@ -9885,6 +10225,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
                 // Auto-dismiss after 6s
                 setTimeout(removeToast, 6000);
+                return removeToast;
             } catch(_) {}
         }
 
@@ -17163,6 +17504,239 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
             __suppressEmptyDeselect = true;
             try { clearTimeout(window.__suppressEmptyDeselectTimer); } catch(_) {}
             window.__suppressEmptyDeselectTimer = setTimeout(function(){ __suppressEmptyDeselect = false; }, ms);
+        }
+
+        // ========================================
+        // KEYBOARD SHORTCUTS
+        // ========================================
+        // Tool and mode keys "click" the matching button, so they behave exactly like the UI
+        // (toggling, hints, disabled state). Del/L/W/A act on the multi-selection when one exists.
+
+        const IS_MAC = /Mac|iPhone|iPad|iPod/.test(navigator.platform || navigator.userAgent || '');
+        const MOD_KEY_LABEL = IS_MAC ? '⌘' : 'Ctrl';
+        const DELETE_KEY_LABEL = IS_MAC ? '⌫' : 'Del';
+
+        // Keys that are safe while a polygon is being drawn (P and Esc cancel the drawing on purpose)
+        const DRAWING_SAFE_KEYS = new Set(['1', '2', '3', '4', 's', 'p', '?']);
+
+        const ARMED_TOOL_BUTTONS = {
+            [EDIT_TOOLS.ADD_POINT]: 'btn-add-point',
+            [EDIT_TOOLS.ADD_POLYGON]: 'btn-add-polygon',
+            [EDIT_TOOLS.REMOVE]: 'btn-remove-feature'
+        };
+
+        function clickButton(id) {
+            const btn = document.getElementById(id);
+            if (btn && !btn.disabled) btn.click();
+        }
+        const pressButton = id => () => clickButton(id);
+        // Mode/tool keys never re-trigger the active mode or tool (that would drop selections)
+        const enterMode = (mode, id) => () => { if (currentMode !== mode) clickButton(id); };
+        const pickTool = (tool, id) => () => { if (currentMode !== MODES.EDIT || currentTool !== tool) clickButton(id); };
+        const withSelection = (bulkAction, action) => () => (multiSelection.size > 0 ? bulkAction() : action());
+
+        const SHORTCUT_ACTIONS = {
+            '1': () => switchBaseLayer(0),
+            '2': () => switchBaseLayer(1),
+            '3': () => switchBaseLayer(2),
+            '4': () => switchBaseLayer(3),
+            v: enterMode(MODES.VIEW, 'btn-pan-mode'),
+            e: enterMode(MODES.EDIT, 'btn-edit-mode'),
+            c: enterMode(MODES.VALIDATION, 'btn-validate-mode'),
+            j: pickTool(EDIT_TOOLS.SELECT, 'btn-select-tool'),
+            k: pickTool(EDIT_TOOLS.VERTEX, 'btn-vertex-tool'),
+            l: withSelection(openBulkPropertiesModal, pickTool(EDIT_TOOLS.PROPERTIES, 'btn-properties-tool')),
+            s: toggleSnapFromKeyboard,
+            o: pressButton('btn-add-point'),
+            p: pressButton('btn-add-polygon'),
+            delete: withSelection(openBulkDeleteModal, pressButton('btn-remove-feature')),
+            a: withSelection(openBulkAutoCleanModal, pressButton('btn-auto-clean')),
+            w: withSelection(openBulkExportModal, pressButton('btn-export')),
+            '?': openShortcutsModal
+        };
+
+        /** Layout-independent key id: digits by physical key (e.g. Czech number row), letters by label with a physical fallback for non-Latin layouts */
+        function shortcutKeyOf(e) {
+            if (e.key === 'Escape') return 'escape';
+            // The Mac "delete" key reports Backspace
+            if (e.key === 'Delete' || (IS_MAC && e.key === 'Backspace')) return 'delete';
+            if (e.key === '?') return '?';
+            if (/^[1-4]$/.test(e.key)) return e.key;
+            const digit = /^Digit([1-4])$/.exec(e.code || '');
+            if (digit) return digit[1];
+            if (/^[a-z]$/i.test(e.key)) return e.key.toLowerCase();
+            const letter = /^Key([A-Z])$/.exec(e.code || '');
+            return letter ? letter[1].toLowerCase() : null;
+        }
+
+        function isTextEntryTarget(el) {
+            if (!el || !el.tagName) return false;
+            if (el.isContentEditable || el.tagName === 'TEXTAREA' || el.tagName === 'SELECT') return true;
+            return el.tagName === 'INPUT' && !/^(checkbox|radio|range|button|submit|reset|color|file)$/i.test(el.type);
+        }
+
+        function isShortcutsModalOpen() {
+            const modal = document.getElementById('shortcutsModal');
+            return !!modal && modal.classList.contains('show');
+        }
+
+        function isBlockingOverlayOpen() {
+            if (document.querySelector('.properties-modal.show')) return true;
+            return ['welcomeOverlay', 'loadingOverlay', 'invalidFeaturesOverlay'].some(function(id) {
+                const el = document.getElementById(id);
+                return !!el && el.getClientRects().length > 0;
+            });
+        }
+
+        function handleGlobalKeydown(e) {
+            try {
+                if (e.isComposing || e.key === 'Process' || isTextEntryTarget(e.target)) return;
+                const key = shortcutKeyOf(e);
+                if (!key) return;
+
+                // History (Ctrl/Cmd+Z/Y/Q) works everywhere, as before
+                if (e.ctrlKey || e.metaKey) {
+                    const history = { z: undoLastChange, y: redoLastChange, q: toggleLastStep }[key];
+                    if (history) { e.preventDefault(); history(); }
+                    return;
+                }
+                if (e.altKey) return;
+                if (key === 'escape') { handleEscapeKey(e); return; }
+
+                if (isShortcutsModalOpen()) {
+                    if (key === '?') { e.preventDefault(); closeShortcutsModal(); }
+                    return;
+                }
+                const action = SHORTCUT_ACTIONS[key];
+                if (!action || !map || lassoDrawState || __draggingVertexActive || isBlockingOverlayOpen()) return;
+                e.preventDefault();
+                if (e.repeat) return; // holding a key must not toggle things back and forth
+                if (drawingCoords.length > 0 && !DRAWING_SAFE_KEYS.has(key)) {
+                    showShortcutToast(getText('shortcutFinishPolygonFirst'), 'amber');
+                    return;
+                }
+                action();
+            } catch (err) {
+                console.warn('Keyboard shortcut failed', err);
+            }
+        }
+
+        /** Esc unwinds one step: shortcuts modal > lasso > selection > armed Add/Remove tool */
+        function handleEscapeKey(e) {
+            if (isShortcutsModalOpen()) { e.preventDefault(); closeShortcutsModal(); return; }
+            if (lassoDrawState) { e.preventDefault(); cancelLassoDraw(); return; }
+            // Bulk modals and progress dialogs rely on the selection staying intact
+            if (isBlockingOverlayOpen()) return;
+            if (multiSelection.size > 0) { clearBulkSelection(); return; }
+            const armedButton = currentMode === MODES.EDIT && ARMED_TOOL_BUTTONS[currentTool];
+            if (armedButton) { e.preventDefault(); clickButton(armedButton); }
+        }
+
+        /** Activate the n-th base layer (same order as the layer control) */
+        function switchBaseLayer(index) {
+            const layers = Object.values(baseLayers);
+            const target = layers[index];
+            if (!target || map.hasLayer(target)) return;
+            layers.forEach(function(layer) { if (map.hasLayer(layer)) map.removeLayer(layer); });
+            // The layer control syncs its radios and fires 'baselayerchange' (updates currentBaseLayer)
+            map.addLayer(target);
+        }
+
+        function toggleSnapFromKeyboard() {
+            const checkbox = document.getElementById('snap-enabled');
+            if (!checkbox || checkbox.disabled) return;
+            checkbox.click(); // fires 'change', which updates snapEnabled
+            showShortcutToast(getText(checkbox.checked ? 'shortcutSnapOn' : 'shortcutSnapOff'), checkbox.checked ? 'green' : 'amber');
+        }
+
+        // Only one shortcut toast at a time, so repeated key presses don't stack them
+        let __dismissShortcutToast = null;
+        function showShortcutToast(message, level) {
+            if (__dismissShortcutToast) __dismissShortcutToast();
+            __dismissShortcutToast = showErrorNotification(message, level);
+        }
+
+        function buildShortcutGroups() {
+            const t = getText;
+            const again = t('shortcutPressAgainToCancel');
+            const layerNames = Object.keys(baseLayers).slice(0, 4);
+            return [
+                { title: t('shortcutsGroupLayers'), rows: layerNames.map((name, i) => ({ keys: [String(i + 1)], text: name })) },
+                { title: t('shortcutsGroupModes'), rows: [
+                    { keys: ['V'], text: t('panMode') },
+                    { keys: ['E'], text: t('editMode') },
+                    { keys: ['C'], text: t('validateMode') }
+                ] },
+                { title: t('shortcutsGroupTools'), rows: [
+                    { keys: ['J'], text: t('selectTool') },
+                    { keys: ['K'], text: t('vertexTool') },
+                    { keys: ['L'], text: t('editPropertiesBtn'), sel: t('shortcutSelEditProperties') },
+                    { keys: ['S'], text: t('shortcutToggleSnap') }
+                ] },
+                { title: t('shortcutsGroupActions'), rows: [
+                    { keys: ['O'], text: t('addPoint'), note: again },
+                    { keys: ['P'], text: t('addPolygon'), note: again },
+                    { keys: [DELETE_KEY_LABEL], text: t('removeFeature'), note: again, sel: t('shortcutSelDelete') },
+                    { keys: ['A'], text: t('autoClean'), sel: t('shortcutSelAutoClean') },
+                    { keys: ['W'], text: t('export'), sel: t('shortcutSelExport') }
+                ] },
+                { title: t('shortcutsGroupSelection'), rows: [
+                    { keys: [MOD_KEY_LABEL, t('shortcutKeyClick')], text: t('shortcutSelectToggle') },
+                    { keys: [MOD_KEY_LABEL, t('shortcutKeyDrag')], text: t('shortcutLasso') },
+                    { keys: ['Esc'], text: t('shortcutClearSelection') }
+                ] },
+                { title: t('shortcutsGroupHistory'), rows: [
+                    { keys: [MOD_KEY_LABEL, 'Z'], text: t('shortcutUndo') },
+                    { keys: [MOD_KEY_LABEL, 'Y'], text: t('shortcutRedo') },
+                    { keys: [MOD_KEY_LABEL, 'Q'], text: t('shortcutToggleLast') },
+                    { keys: ['?'], text: t('shortcutShowHelp') }
+                ] }
+            ];
+        }
+
+        function makeShortcutEl(tag, className, text) {
+            const el = document.createElement(tag);
+            if (className) el.className = className;
+            if (text) el.textContent = text;
+            return el;
+        }
+
+        function renderShortcutsModal() {
+            const body = document.getElementById('shortcutsBody');
+            if (!body) return;
+            body.replaceChildren(...buildShortcutGroups().map(function(group) {
+                const section = makeShortcutEl('section', 'shortcuts-group');
+                section.appendChild(makeShortcutEl('h4', '', group.title));
+                group.rows.forEach(function(row) {
+                    const keys = makeShortcutEl('span', 'shortcut-keys');
+                    row.keys.forEach(function(k, i) {
+                        if (i) keys.append(' + ');
+                        keys.appendChild(makeShortcutEl('kbd', '', k));
+                    });
+                    const desc = makeShortcutEl('span', 'shortcut-desc', row.text);
+                    if (row.note) desc.appendChild(makeShortcutEl('small', '', row.note));
+                    if (row.sel) desc.appendChild(makeShortcutEl('small', 'shortcut-sel', getText('shortcutWithSelection', row.sel)));
+                    const rowEl = makeShortcutEl('div', 'shortcut-row');
+                    rowEl.append(keys, desc);
+                    section.appendChild(rowEl);
+                });
+                return section;
+            }));
+        }
+
+        function openShortcutsModal() {
+            const modal = document.getElementById('shortcutsModal');
+            if (!modal) return;
+            renderShortcutsModal();
+            modal.classList.toggle('has-selection', multiSelection.size > 0);
+            modal.classList.add('show');
+            const closeBtn = modal.querySelector('.properties-close');
+            if (closeBtn) closeBtn.focus();
+        }
+
+        function closeShortcutsModal() {
+            const modal = document.getElementById('shortcutsModal');
+            if (modal) modal.classList.remove('show');
         }
     </script>
 </body>
